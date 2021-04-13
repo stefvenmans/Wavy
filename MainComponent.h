@@ -5,6 +5,16 @@
 #include <stdlib.h>
 #include "../rt-wdf_lib/Libs/rt-wdf/rt-wdf.h"
 
+
+
+
+
+
+
+
+
+
+
 class WdfEnvironment : public wdfTree
 {
 public:
@@ -42,6 +52,182 @@ public:
     }
     
 };
+
+
+// Poly //
+class CircuitComponent : public juce::Component
+{
+public:
+    CircuitComponent(juce::String svgFileName) : svgFileName{svgFileName}
+    {
+        auto svgFile = juce::File::getCurrentWorkingDirectory().getChildFile(svgFileName);
+        svgDrawable = juce::Drawable::createFromSVGFile(svgFile);
+        if (svgDrawable != nullptr)
+        {
+            if (auto svgDrawableComposite = dynamic_cast<juce::DrawableComposite*> (svgDrawable.get())){
+                svgDrawableComposite->setBoundingBox ({ static_cast<float>(getX()+10), static_cast<float>(getY()+10), 80.0f, 80.0f });
+            }
+        }
+    }
+    
+    virtual wdfTreeNode * createWDFComponent(double Rp){
+        return r.get();
+    }
+    virtual wdfTreeNode * getWDFComponent(){
+        return r.get();
+    }
+    
+    void resized() override{
+        constrainer.setMinimumOnscreenAmounts (getHeight(), getWidth(),
+        getHeight(), getWidth());
+        
+    }
+    
+    void mouseDown(const juce::MouseEvent& e) override{
+        if(e.mods.isCommandDown() && e.mods.isShiftDown()){
+            rotate = true;
+            shooldDrag = false;
+            repaint();
+        }
+        else dragger.startDraggingComponent (this, e);
+
+        
+    }
+    void mouseDrag(const juce::MouseEvent& e) override{
+        if(shooldDrag == true) dragger.dragComponent (this, e, &constrainer);
+    }
+    void mouseUp(const juce::MouseEvent& e) override{
+        const int width = getWidth();
+        const int height = getHeight();
+        const int x = getX();
+        const int y = getY();
+        if(x % width >= width/2){
+            if(getY() % height >= height/2){
+                setBounds(x + width - x % width, y + height - y % height, width, height);
+            }
+            else{
+                setBounds(x + width - x % width, y - y % height, width, height);
+            }
+        }
+        else{
+            if(getY() % height >= height/2){
+                setBounds(x - x % width, y + height - y % height, width, height);
+            }
+            else{
+                setBounds(x - x % width, y - y % height, width, height);
+            }
+        }
+        shooldDrag = true;
+        
+        if(callBack != NULL){
+            if(callBack(this)){
+                //isConnected = true;
+            }
+        }
+        
+    }
+    
+    void addHandler(std::function<bool(juce::Component* c)> clbk){
+        callBack = clbk;
+    }
+    
+    int getRotationX(){
+        std::cout << angle << std::endl;
+        return -std::cos(angle);
+    }
+    
+    int getRotationY(){
+        std::cout << angle << std::endl;
+        return -std::sin(angle);
+    }
+    
+private:
+    juce::String svgFileName;
+    std::unique_ptr<juce::Drawable> svgDrawable;
+    std::unique_ptr<wdfTerminatedRes> r;
+    bool rotate = false;
+    bool shooldDrag = true;
+    bool isAdapted = true;
+    float angle = 0;
+    juce::Line<float> wBLine;
+    
+    
+    juce::ComponentBoundsConstrainer constrainer;
+    juce::ComponentDragger dragger;
+    
+    std::function<bool(Component*c)> callBack;
+};
+
+
+class SimpleRootComponent : public CircuitComponent
+{
+    
+};
+
+class NonLinearComponent : public CircuitComponent
+{
+    
+};
+
+class AdaptedLeafComponent : public CircuitComponent
+{
+    
+};
+
+class OnePortComponent : public AdaptedLeafComponent
+{
+    
+};
+
+class Resistor_ : public OnePortComponent
+{
+    
+};
+
+class Capacitor_ : public OnePortComponent
+{
+    
+};
+
+class TwoPortComponent : public AdaptedLeafComponent
+{
+    
+};
+
+class Inverter_ : public TwoPortComponent
+{
+    
+};
+
+class ThreePortComponent : public AdaptedLeafComponent
+{
+    
+};
+
+class Series_ : public ThreePortComponent
+{
+    
+};
+
+class Parallel_ : public ThreePortComponent
+{
+    
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class Resistor : public juce::Component
 {
