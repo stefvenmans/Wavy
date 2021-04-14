@@ -24,6 +24,9 @@ MainComponent::MainComponent()
     
     //GUI
     
+    schematic.addAndMakeVisible(circuitComponent);
+    circuitComponent.setBounds(100, 100, 100, 100);
+    
     
     
     //sidePanel.setBounds(0,0,100,580);
@@ -119,6 +122,9 @@ MainComponent::MainComponent()
     componentSelector.addItem("Ideal Voltage Source", 5);
     componentSelector.addItem("R-Node",6);
     componentSelector.addItem("Dummy item",7);
+    componentSelector.addItem("NewResistor", 8);
+    componentSelector.addItem("NewInverter", 9);
+    componentSelector.addItem("NewSeries", 10);
     addAndMakeVisible(componentSelector);
     
     componentSelector.onChange = [this](){
@@ -153,6 +159,15 @@ MainComponent::MainComponent()
                 components.getLast()->setBounds(20,20,100,100);
                 ((DraggableComp*)(components.getLast()))->addHandler(std::bind(&MainComponent::isConnectable,this, std::placeholders::_1, std::placeholders::_2));
                 break;
+            case 8:
+                schematic.addAndMakeVisible(leafComponents.add(new Resistor_()));
+                leafComponents.getLast()->setBounds(20,20,100,100);
+                break;
+                
+            case 9:
+            schematic.addAndMakeVisible(leafComponents.add(new Inverter_()));
+            leafComponents.getLast()->setBounds(20,20,100,100);
+            break;
         }
     };
     
@@ -193,7 +208,7 @@ MainComponent::MainComponent()
     setSize (820, 580);
     
     
-    sidePanel.showOrHide(true);
+    sidePanel.showOrHide(false);
 
     // Some platforms require permissions to open input channels so request that here
     if (juce::RuntimePermissions::isRequired (juce::RuntimePermissions::recordAudio)

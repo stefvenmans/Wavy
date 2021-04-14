@@ -70,33 +70,50 @@ public:
         }
     }
     
-    virtual wdfTreeNode * createWDFComponent(double Rp){
-        return r.get();
-    }
-    virtual wdfTreeNode * getWDFComponent(){
-        return r.get();
+    void paint (juce::Graphics& g) override
+    {
+        g.fillAll(juce::Colours::white);
+        if(rotate){
+            angle += juce::MathConstants<float>::halfPi;
+            if(angle >= juce::MathConstants<float>::twoPi) angle = 0;
+            rotate = false;
+        }
+        svgDrawable->draw (g, getAlpha(), getTransform().rotated(angle, getWidth()/2, getHeight()/2));
     }
     
-    void resized() override{
+    void paintSVG(juce::Graphics& g)
+    {
+        if(rotate){
+            angle += juce::MathConstants<float>::halfPi;
+            if(angle >= juce::MathConstants<float>::twoPi) angle = 0;
+            rotate = false;
+        }
+        svgDrawable->draw (g, getAlpha(), getTransform().rotated(angle, getWidth()/2, getHeight()/2));
+    }
+    
+    void resized() override
+    {
         constrainer.setMinimumOnscreenAmounts (getHeight(), getWidth(),
         getHeight(), getWidth());
-        
     }
     
-    void mouseDown(const juce::MouseEvent& e) override{
+    void mouseDown(const juce::MouseEvent& e) override
+    {
         if(e.mods.isCommandDown() && e.mods.isShiftDown()){
             rotate = true;
             shooldDrag = false;
             repaint();
         }
         else dragger.startDraggingComponent (this, e);
-
-        
     }
-    void mouseDrag(const juce::MouseEvent& e) override{
+    
+    void mouseDrag(const juce::MouseEvent& e) override
+    {
         if(shooldDrag == true) dragger.dragComponent (this, e, &constrainer);
     }
-    void mouseUp(const juce::MouseEvent& e) override{
+    
+    void mouseUp(const juce::MouseEvent& e) override
+    {
         const int width = getWidth();
         const int height = getHeight();
         const int x = getX();
@@ -127,81 +144,200 @@ public:
         
     }
     
-    void addHandler(std::function<bool(juce::Component* c)> clbk){
+    void addHandler(std::function<bool(juce::Component* c)> clbk)
+    {
         callBack = clbk;
     }
     
-    int getRotationX(){
+    int getRotationX()
+    {
         std::cout << angle << std::endl;
         return -std::cos(angle);
     }
     
-    int getRotationY(){
+    int getRotationY()
+    {
         std::cout << angle << std::endl;
         return -std::sin(angle);
     }
     
-private:
+protected:
     juce::String svgFileName;
     std::unique_ptr<juce::Drawable> svgDrawable;
-    std::unique_ptr<wdfTerminatedRes> r;
-    bool rotate = false;
-    bool shooldDrag = true;
-    bool isAdapted = true;
-    float angle = 0;
-    juce::Line<float> wBLine;
-    
-    
     juce::ComponentBoundsConstrainer constrainer;
     juce::ComponentDragger dragger;
-    
+    bool rotate = false;
+    bool shooldDrag = true;
+    float angle = 0;
     std::function<bool(Component*c)> callBack;
 };
 
 
-class SimpleRootComponent : public CircuitComponent
-{
-    
-};
-
-class NonLinearComponent : public CircuitComponent
-{
-    
-};
-
 class AdaptedLeafComponent : public CircuitComponent
 {
+public:
+    AdaptedLeafComponent(juce::String svgFileName) : CircuitComponent(svgFileName)
+    {
+        
+    }
     
+    
+    virtual wdfTreeNode * createWDFComponent(){
+        return treeNode.get();
+    }
+   virtual wdfTreeNode * getWDFComponent(){
+       return treeNode.get();
+   }
+protected:
+    std::unique_ptr<wdfTreeNode> treeNode;
+    bool isAdapted = true;
 };
 
 class OnePortComponent : public AdaptedLeafComponent
 {
+public:
+    OnePortComponent(juce::String svgFileName) : AdaptedLeafComponent(svgFileName)
+    {
+
+    }
+     
+    void paint(juce::Graphics& g) override
+    {
+        paintSVG(g);
+        if(isAdapted){
+            wBLine = juce::Line<float>(80,20, 90+ 10.0f, 20);
+        }
+        else{
+            wBLine = juce::Line<float>(90,20, 90+ 10.0f, 20);
+        }
+        auto wALine = juce::Line<float>(100,80, 90, 80);
+        auto wBAdapted = juce::Line<float>(80,15,80,25);
+        
+        wBLine.applyTransform(getTransform().rotated(angle, getWidth()/2, getHeight()/2));
+        wALine.applyTransform(getTransform().rotated(angle, getWidth()/2, getHeight()/2));
+        wBAdapted.applyTransform(getTransform().rotated(angle, getWidth()/2, getHeight()/2));
+        
+        g.drawArrow(wBLine, 1.5, 10,4);
+        g.drawArrow(wALine, 1.5, 10,4);
+        g.drawLine(wBAdapted,1.5);
+    }
+protected:
+    juce::Line<float> wBLine;
     
 };
 
 class Resistor_ : public OnePortComponent
 {
+public:
+    Resistor_() : OnePortComponent("res.svg")
+    {
+        
+    }
     
+    
+private:
+    std::unique_ptr<wdfTerminatedRes> r;
 };
 
 class Capacitor_ : public OnePortComponent
 {
+public:
+    Capacitor_() : OnePortComponent("cap.svg")
+    {
+        
+    }
     
 };
 
 class TwoPortComponent : public AdaptedLeafComponent
 {
+public:
+    TwoPortComponent(juce::String svgFileName) : AdaptedLeafComponent(svgFileName), child(nullptr)
+    {
+        portLines.push_back(juce::Line<float>(10,80, 0, 80));
+        portLines.push_back(juce::Line<float>(0,20, 10.0f, 20));
+        portLines.push_back(juce::Line<float>(100,80, 90, 80));
+        portLines.push_back(juce::Line<float>(90,20, 90+ 10.0f, 20));
+    }
     
+    void paint(juce::Graphics& g) override
+    {
+        paintSVG(g);
+        
+        for(auto l : portLines){
+            l.applyTransform(getTransform().rotated(angle, getWidth()/2, getHeight()/2));
+            g.drawArrow(l, 1.5, 10,4);
+           
+         }
+    }
+    
+    void connectChild(wdfTreeNode *newChild){
+        child = newChild;
+    }
+    
+    void disconnectChild(){
+        child = nullptr;
+    }
+    
+protected:
+    wdfTreeNode* child;
+    std::vector<juce::Line<float>> portLines;
 };
 
 class Inverter_ : public TwoPortComponent
 {
+public:
+    Inverter_() : TwoPortComponent("inv.svg")
+    {
+        
+    }
     
 };
 
 class ThreePortComponent : public AdaptedLeafComponent
 {
+public:
+    ThreePortComponent(juce::String svgFileName) : AdaptedLeafComponent(svgFileName), leftChild(nullptr), rightChild(nullptr)
+    {
+        portLines.push_back(juce::Line<float>(10,80, 0, 80));
+        portLines.push_back(juce::Line<float>(0,20, 10.0f, 20));
+        portLines.push_back(juce::Line<float>(80,0, 80, 10));
+        portLines.push_back(juce::Line<float>(20,10, 20, 0));
+        portLines.push_back(juce::Line<float>(100,80, 90, 80));
+        portLines.push_back(juce::Line<float>(90,20, 90+ 10.0f, 20));
+    }
     
+    void paint(juce::Graphics& g) override
+    {
+        paintSVG(g);
+        
+        for(auto l : portLines){
+            l.applyTransform(getTransform().rotated(angle, getWidth()/2, getHeight()/2));
+            g.drawArrow(l, 1.5, 10,4);
+           
+         }
+    }
+    
+    void connectLeftChild(wdfTreeNode *newLeftChild){
+        leftChild = newLeftChild;
+    }
+    
+    void connectRightChild(wdfTreeNode *newRightChild){
+        rightChild = newRightChild;
+    }
+    
+    void disconnectLeftChild(){
+        leftChild = nullptr;
+    }
+    
+    void disconnectRightChild(){
+        rightChild = nullptr;
+    }
+    
+protected:
+    wdfTreeNode* leftChild;
+    wdfTreeNode* rightChild;
+    std::vector<juce::Line<float>> portLines;
 };
 
 class Series_ : public ThreePortComponent
@@ -214,6 +350,16 @@ class Parallel_ : public ThreePortComponent
     
 };
 
+
+class SimpleRootComponent : public CircuitComponent
+{
+    
+};
+
+class NonLinearComponent : public CircuitComponent
+{
+    
+};
 
 
 
@@ -1124,6 +1270,7 @@ private:
     Parallel p1;
     //DraggableComp draggableComp;
     juce::OwnedArray<juce::Component> components;
+    juce::OwnedArray<AdaptedLeafComponent> leafComponents;
     
     juce::TextButton textButton;
     juce::Slider res1Slider;
@@ -1138,6 +1285,9 @@ private:
     paramData res1Val;
     
     juce::SidePanel sidePanel{"Library",200,true,nullptr,false};
+    
+    
+    Resistor_ circuitComponent{};
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };
