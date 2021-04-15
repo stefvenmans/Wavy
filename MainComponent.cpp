@@ -45,8 +45,9 @@ MainComponent::MainComponent()
     propertyPanelViewPort.setViewedComponent(&propertyPanel, false);
     addChildComponent(propertyPanelViewPort);
     propertyPanelViewPort.setScrollBarsShown(true, false);
-    
     propertyPanel.setBounds(0, 0, 250, 1000);
+    
+    propertyPanel.setOutputCallbackFunction(std::bind(&MainComponent::setOutput,this,std::placeholders::_1));
     
     
     addAndMakeVisible(r1);
@@ -98,7 +99,9 @@ MainComponent::MainComponent()
 //        //res1Val.value = res1Slider.getValue();
         for(auto i=0; i<500; i++){
             wdfEnvironment.cycleWave();
-            std::cout << -leafComponents[0]->getWDFComponent()->upPort->getPortVoltage() << std::endl;
+            if(outputIndex != -1 && outputIndex < leafComponents.size()){
+                std::cout << -leafComponents[outputIndex]->getWDFComponent()->upPort->getPortVoltage() << std::endl;
+            }
         }
         //frontPanel.addNewComponent(new juce::Slider());
     };
@@ -333,8 +336,17 @@ bool MainComponent::wantsToConnect_(CircuitComponent* c)
         
         if(((iX+iW)==cX && iY==cY) || ((iY+iH)==cY && iX==cX) || ((cX+cW)==iX && cY==iY) || ((cY+cH)==iY && cX==iX)){
             std::cout << "a root want could connect to this component" << std::endl;
+            c->connect(simpleRoot.get());
+            simpleRoot->connect(c);
+            
+            c->repaint();
+            simpleRoot->repaint();
         }
     }
+}
+
+void MainComponent::setOutput(CircuitComponent* c){
+    outputIndex = leafComponents.indexOf((AdaptedLeafComponent*)c);
 }
 
 

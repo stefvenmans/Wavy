@@ -7,7 +7,7 @@
 
 
 enum ComponentType {
-    L_RES,L_CAP,L_IND,L_VOL,L_CUR,A_SER,A_PAR,SR_VOL,SR_CUR,NOT_SET
+    L_RES,L_CAP,L_IND,L_VOL,L_CUR,A_INV,A_SER,A_PAR,SR_VOL,SR_CUR,NOT_SET
 };
 
 
@@ -342,11 +342,11 @@ class Resistor_ : public OnePortComponent
 public:
     Resistor_() : OnePortComponent("res.svg")
     {
-        
+        R = 1;
     }
     
     wdfTreeNode* createWDFComponent() override{
-        treeNode.reset(new wdfTerminatedRes(1000));
+        treeNode.reset(new wdfTerminatedRes(R));
         return treeNode.get();
     }
     
@@ -354,8 +354,16 @@ public:
         return ComponentType::L_RES;
     }
     
+    void setR(double newR){
+        R = newR;
+    }
+    
+    double getR(){
+        return R;
+    }
+    
 private:
-    //std::unique_ptr<wdfTerminatedRes> r;
+    double R;
 };
 
 class Capacitor_ : public OnePortComponent
@@ -363,8 +371,38 @@ class Capacitor_ : public OnePortComponent
 public:
     Capacitor_() : OnePortComponent("cap.svg")
     {
-        
+        C = 1;
+        T = 1;
     }
+    
+    wdfTreeNode* createWDFComponent() override{
+        treeNode.reset(new wdfTerminatedCap(C,T));
+        return treeNode.get();
+    }
+    
+    ComponentType getComponentType() override{
+        return ComponentType::L_CAP;
+    }
+    
+    void setC(double newC){
+        C = newC;
+    }
+    
+    double getC(){
+        return C;
+    }
+    
+    void setT(double newT){
+        T = newT;
+    }
+    
+    double getT(){
+        return T;
+    }
+    
+private:
+    double C;
+    double T;
     
 };
 
@@ -470,9 +508,10 @@ public:
         treeNode.reset(new wdfInverter(child->createWDFComponent()));
         return treeNode.get();
     }
-private:
-    //std::unique_ptr<wdfInverter> inv;
     
+    ComponentType getComponentType() override{
+        return ComponentType::A_INV;
+    }
 };
 
 class ThreePortComponent : public AdaptedLeafComponent
@@ -595,23 +634,31 @@ public:
         else return nullptr;
         return treeNode.get();
     }
+    
+    ComponentType getComponentType() override{
+        return ComponentType::A_SER;
+    }
 };
 
 class Parallel_ : public ThreePortComponent
 {
 public:
-Parallel_() : ThreePortComponent("par.svg")
-{
-    
-}
-
-wdfTreeNode * createWDFComponent() override{
-    if(leftChild != nullptr && rightChild != nullptr){
-        treeNode.reset(new wdfTerminatedParallel(leftChild->createWDFComponent(),rightChild->createWDFComponent()));
+    Parallel_() : ThreePortComponent("par.svg")
+    {
+        
     }
-    else return nullptr;
-    return treeNode.get();
-}
+
+    wdfTreeNode * createWDFComponent() override{
+        if(leftChild != nullptr && rightChild != nullptr){
+            treeNode.reset(new wdfTerminatedParallel(leftChild->createWDFComponent(),rightChild->createWDFComponent()));
+        }
+        else return nullptr;
+        return treeNode.get();
+    }
+    
+    ComponentType getComponentType() override{
+        return ComponentType::A_PAR;
+    }
 };
 
 
@@ -697,6 +744,7 @@ public:
             }
             if(connectSuccesfull){
                 isConnected[index] = true;
+                std::cout << "child set" << std::endl;
                 child = (AdaptedLeafComponent*)c;
                 return;
             }
@@ -723,16 +771,31 @@ class IdealVoltageSource_ : public SimpleRootComponent
 public:
     IdealVoltageSource_() : SimpleRootComponent("idealvol.svg")
     {
-        
+        Vs = 1;
     }
     
     wdfRootNode * createWDFComponent() override{
         if(child != nullptr){
-            root.reset(new wdfIdealVSource(10) );
+            root.reset(new wdfIdealVSource(Vs) );
         }
         else return nullptr;
         return root.get();
     }
+    
+    ComponentType getComponentType() override{
+        return ComponentType::SR_VOL;
+    }
+    
+    void setVs(double newVs){
+        Vs = newVs;
+    }
+    
+    double getVs(){
+        return Vs;
+    }
+    
+private:
+    double Vs;
 };
 
 class NonLinearComponent : public CircuitComponent
@@ -1600,12 +1663,24 @@ private:
     DraggableComp dragComp;
 };
 
-class PropertyPanel : public juce::Component
+class PropertyPanel :   public juce::Component,
+                        public juce::Label::Listener,
+                        public juce::Button::Listener
 {
 public:
     PropertyPanel()
     {
+        addAndMakeVisible(componentName);
+        componentName.setBounds(0,0,100,20);
         
+        addChildComponent(prop1);
+        prop1.setEditable(true);
+        prop1.setBounds(0,30,100,20);
+        prop1.addListener(this);
+        
+        addAndMakeVisible(setOutput);
+        setOutput.setBounds(0,70,20,20);
+        setOutput.addListener(this);
     }
     
     void paint (juce::Graphics& g) override{
@@ -1615,8 +1690,71 @@ public:
     
     void setPropertiesForComponent(CircuitComponent* c){
         std::cout << "propertyPanel called for : " << c->getComponentType() << std::endl;
+        componentLastSelected = c;
+        switch(c->getComponentType()){
+            case L_RES:
+                std::cout << " i am a resistor" << std::endl;
+                componentName.setText("Resistor",juce::NotificationType::dontSendNotification);
+                prop1.setText(juce::String(((Resistor_*)c)->getR()),juce::NotificationType::dontSendNotification);
+                prop1.setVisible(true);
+                break;
+            case L_CAP:
+                
+                break;
+            case A_INV:
+                
+                break;
+            case A_SER:
+                
+                break;
+            case A_PAR:
+                
+                break;
+        }
         
     }
+    
+    void labelTextChanged (juce::Label *labelThatHasChanged) override{
+        switch(componentLastSelected->getComponentType()){
+            case L_RES:
+                ((Resistor_*)componentLastSelected)->setR(prop1.getText().getDoubleValue());
+                break;
+            case L_CAP:
+                
+                break;
+            case A_INV:
+                
+                break;
+            case A_SER:
+                
+                break;
+            case A_PAR:
+                
+                break;
+        }
+    }
+    
+    void setOutputCallbackFunction(std::function<void(CircuitComponent* c)> callback){
+        setOutputOfCircuit = callback;
+    }
+    
+    void buttonStateChanged (juce::Button * b) override {
+        std::cout << "togle state changed" << std::endl;
+        if(b->getToggleState()){
+            setOutputOfCircuit(componentLastSelected);
+        }
+    }
+    
+    void buttonClicked (juce::Button * b) override{
+        
+    }
+    
+private:
+    juce::Label componentName;
+    juce::Label prop1;
+    CircuitComponent* componentLastSelected = nullptr;
+    juce::ToggleButton setOutput;
+    std::function<void(CircuitComponent* c)> setOutputOfCircuit;
 };
 
 
@@ -1688,7 +1826,9 @@ private:
     juce::Viewport propertyPanelViewPort;
     bool propertyPanelShowHide = false;
     
+    void setOutput(CircuitComponent* c);
     
+    int outputIndex = -1;
     
     float scale = 1.0f;
     paramData res1Val;
