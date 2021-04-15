@@ -39,6 +39,16 @@ MainComponent::MainComponent()
     viewPort.setBounds(0, 0, 820, 420);
     viewPort.setScrollBarsShown(true,true);
     
+    
+    
+    addAndMakeVisible(propertyPanel);
+    propertyPanelViewPort.setViewedComponent(&propertyPanel, false);
+    addChildComponent(propertyPanelViewPort);
+    propertyPanelViewPort.setScrollBarsShown(true, false);
+    
+    propertyPanel.setBounds(0, 0, 250, 1000);
+    
+    
     addAndMakeVisible(r1);
     addAndMakeVisible(r2);
     addAndMakeVisible(s1);
@@ -76,7 +86,7 @@ MainComponent::MainComponent()
         
         
         
-        wdfEnvironment.setSubtreeEntryNodes(leafComponents[0]->createWDFComponent());
+        wdfEnvironment.setSubtreeEntryNodes(simpleRoot->getChildComponent()->createWDFComponent());
 //
         wdfEnvironment.setRoot(simpleRoot->createWDFComponent());
 //
@@ -96,20 +106,22 @@ MainComponent::MainComponent()
     addAndMakeVisible(showLibraryButton);
     showLibraryButton.setBounds(600, 400, 40, 40);
     showLibraryButton.onClick = [this] () {
-        std::cout << sidePanel.Component::isShowing() << std::endl;
-        if(sidePanel.isPanelShowing() == false){
-            sidePanel.showOrHide(true);
-            setSize(1000,getHeight());
-            viewPort.setBounds(sidePanel.getWidth(), 0, getWidth()-sidePanel.getWidth(), getHeight()-160);
-        frontPanel.setBounds(sidePanel.getWidth(),getHeight()-160,getWidth()-sidePanel.getWidth(),580-420);
-            
-            
-        }
-        else{
-            viewPort.setBounds(0, 0, getWidth(), getHeight()-160);
-            frontPanel.setBounds(0,getHeight()-160,getWidth(),580-420);
-            sidePanel.showOrHide(false);
-        }
+//        std::cout << sidePanel.Component::isShowing() << std::endl;
+//        if(sidePanel.isPanelShowing() == false){
+//            sidePanel.showOrHide(true);
+//            setSize(1000,getHeight());
+//            viewPort.setBounds(sidePanel.getWidth(), 0, getWidth()-sidePanel.getWidth(), getHeight()-160);
+//        frontPanel.setBounds(sidePanel.getWidth(),getHeight()-160,getWidth()-sidePanel.getWidth(),580-420);
+//
+//
+//        }
+//        else{
+//            viewPort.setBounds(0, 0, getWidth(), getHeight()-160);
+//            frontPanel.setBounds(0,getHeight()-160,getWidth(),580-420);
+//            sidePanel.showOrHide(false);
+//        }
+        propertyPanelShowHide = false;
+        resized();
         
         
     };
@@ -167,24 +179,28 @@ MainComponent::MainComponent()
                 schematic.addAndMakeVisible(leafComponents.add(new Resistor_()));
                 leafComponents.getLast()->setBounds(20,20,100,100);
                 leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
+                leafComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
                 break;
                 
             case 9:
                 schematic.addAndMakeVisible(leafComponents.add(new Inverter_()));
                 leafComponents.getLast()->setBounds(20,20,100,100);
                 leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
+                leafComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
                 break;
                 
             case 10:
                 schematic.addAndMakeVisible(leafComponents.add(new Series_()));
                 leafComponents.getLast()->setBounds(20,20,100,100);
                 leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
+                leafComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
                 break;
             case 11:
                 simpleRoot = std::make_unique<IdealVoltageSource_>();
                 schematic.addAndMakeVisible(simpleRoot.get());
                 simpleRoot->setBounds(20,20,100,100);
                 simpleRoot->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
+                simpleRoot->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
         }
     };
     
@@ -276,6 +292,12 @@ bool MainComponent::wantsToConnect(juce::Component* c){
   
     std::cout << "component can't connect" << std::endl;
     return false;
+}
+
+void MainComponent::openPropertyPanelForComponent(CircuitComponent* c){
+    propertyPanelShowHide = true;
+    resized();
+    propertyPanel.setPropertiesForComponent(c);
 }
 
 bool MainComponent::wantsToConnect_(CircuitComponent* c)
@@ -434,8 +456,18 @@ void MainComponent::resized()
 //        }
     
     
-    viewPort.setBounds(0, 0, getWidth(), getHeight()-160);
+    
     frontPanel.setBounds(0,getHeight()-160,getWidth(),580-420);
+    
+    if(propertyPanelShowHide){
+        viewPort.setBounds(0, 0, getWidth()-250, getHeight()-160);
+        propertyPanelViewPort.setBounds(getWidth()-250,0,250,getHeight()-160);
+        propertyPanelViewPort.setVisible(true);
+    }
+    else{
+        viewPort.setBounds(0, 0, getWidth(), getHeight()-160);
+        propertyPanelViewPort.setVisible(false);
+    }
     
 }
 

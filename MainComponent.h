@@ -6,6 +6,11 @@
 #include "../rt-wdf_lib/Libs/rt-wdf/rt-wdf.h"
 
 
+enum ComponentType {
+    L_RES,L_CAP,L_IND,L_VOL,L_CUR,A_SER,A_PAR,SR_VOL,SR_CUR,NOT_SET
+};
+
+
 
 class WdfEnvironment : public wdfTree
 {
@@ -106,12 +111,29 @@ public:
             }
             
         }
+        else if(e.mods.isCommandDown()){
+            shooldDrag = false;
+            if(propertyPanelCallback != nullptr){
+                propertyPanelCallback(this);
+            }
+        }
+        
         else dragger.startDraggingComponent (this, e);
     }
     
     void mouseDrag(const juce::MouseEvent& e) override
     {
         if(shooldDrag == true) dragger.dragComponent (this, e, &constrainer);
+        // should check if component moved
+        if(getX()!=lastX || getY()!=lastY){
+            for(auto c: isConnected){
+                c = false;
+            }
+            // get all child components and diconnect them
+            std::cout << "disconnect all" << std::endl;
+            repaint();
+        }
+        
     }
     
     void mouseUp(const juce::MouseEvent& e) override
@@ -138,15 +160,7 @@ public:
         }
         shooldDrag = true;
         
-        // should check if component moved
-        if(getX()!=lastX || getY()!=lastY){
-            for(auto c: isConnected){
-                c = false;
-            }
-            // get all child components and diconnect them
-            std::cout << "disconnect all" << std::endl;
-            repaint();
-        }
+        
         
         if(callBack != NULL){
             if(callBack(this)){
@@ -183,6 +197,14 @@ public:
         return false;
     }
     
+    virtual ComponentType getComponentType(){
+        return ComponentType::NOT_SET;
+    }
+    
+    void setPropertyPanelCallback(std::function<void(CircuitComponent* c)> callbackFunction){
+        propertyPanelCallback = callbackFunction;
+    }
+    
 protected:
     juce::String svgFileName;
     std::unique_ptr<juce::Drawable> svgDrawable;
@@ -192,6 +214,7 @@ protected:
     bool shooldDrag = true;
     float angle = 0;
     std::function<bool(CircuitComponent* c)> callBack;
+    std::function<void(CircuitComponent* c)> propertyPanelCallback;
     std::vector<int> portOrientations;
     int sizeX;
     int sizeY;
@@ -327,6 +350,9 @@ public:
         return treeNode.get();
     }
     
+    ComponentType getComponentType() override{
+        return ComponentType::L_RES;
+    }
     
 private:
     //std::unique_ptr<wdfTerminatedRes> r;
@@ -676,6 +702,10 @@ public:
             }
             index++;
         }
+    }
+    
+    AdaptedLeafComponent* getChildComponent(){
+        return child;
     }
     
 protected:
@@ -1570,6 +1600,27 @@ private:
     DraggableComp dragComp;
 };
 
+class PropertyPanel : public juce::Component
+{
+public:
+    PropertyPanel()
+    {
+        
+    }
+    
+    void paint (juce::Graphics& g) override{
+        g.setColour(juce::Colours::darkgrey);
+        g.fillAll();
+    }
+    
+    void setPropertiesForComponent(CircuitComponent* c){
+        std::cout << "propertyPanel called for : " << c->getComponentType() << std::endl;
+        
+    }
+};
+
+
+
 
 //==============================================================================
 /*
@@ -1603,6 +1654,8 @@ public:
     
     void mouseMagnify (const juce::MouseEvent &event, float scaleFactor) override;
     
+    void openPropertyPanelForComponent(CircuitComponent* c);
+    
     
 private:
     //==============================================================================
@@ -1629,6 +1682,12 @@ private:
     
     juce::Viewport viewPort;
     //juce::BlockField blockField;
+    
+    
+    PropertyPanel propertyPanel;
+    juce::Viewport propertyPanelViewPort;
+    bool propertyPanelShowHide = false;
+    
     
     
     float scale = 1.0f;
