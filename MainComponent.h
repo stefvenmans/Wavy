@@ -7,14 +7,6 @@
 
 
 
-
-
-
-
-
-
-
-
 class WdfEnvironment : public wdfTree
 {
 public:
@@ -79,6 +71,7 @@ public:
             rotate = false;
         }
         svgDrawable->draw (g, getAlpha(), getTransform().rotated(angle, getWidth()/2, getHeight()/2));
+        
     }
     
     void paintSVG(juce::Graphics& g)
@@ -88,6 +81,7 @@ public:
             if(angle >= juce::MathConstants<float>::twoPi) angle = 0;
             rotate = false;
         }
+        
         svgDrawable->draw (g, getAlpha(), getTransform().rotated(angle, getWidth()/2, getHeight()/2));
     }
     
@@ -103,6 +97,12 @@ public:
             rotate = true;
             shooldDrag = false;
             repaint();
+            
+            for(auto &o: portOrientations){
+                o++;
+                if(o > 3) o = 0;
+            }
+            
         }
         else dragger.startDraggingComponent (this, e);
     }
@@ -144,21 +144,23 @@ public:
         
     }
     
-    void addHandler(std::function<bool(juce::Component* c)> clbk)
+    void addHandler(std::function<bool(CircuitComponent* c)> clbk)
     {
         callBack = clbk;
     }
     
-    int getRotationX()
+    float getRotationX()
     {
-        std::cout << angle << std::endl;
-        return -std::cos(angle);
+        return std::cos(-angle);
     }
     
-    int getRotationY()
+    float getRotationY()
     {
-        std::cout << angle << std::endl;
-        return -std::sin(angle);
+        return std::sin(angle);
+    }
+    
+    virtual void connect(CircuitComponent* c){
+        
     }
     
 protected:
@@ -169,7 +171,10 @@ protected:
     bool rotate = false;
     bool shooldDrag = true;
     float angle = 0;
-    std::function<bool(Component*c)> callBack;
+    std::function<bool(CircuitComponent* c)> callBack;
+    std::vector<int> portOrientations;
+    int sizeX;
+    int sizeY;
 };
 
 
@@ -179,15 +184,16 @@ public:
     AdaptedLeafComponent(juce::String svgFileName) : CircuitComponent(svgFileName)
     {
         
+        
     }
     
     
     virtual wdfTreeNode * createWDFComponent(){
         return treeNode.get();
     }
-   virtual wdfTreeNode * getWDFComponent(){
-       return treeNode.get();
-   }
+    virtual wdfTreeNode * getWDFComponent(){
+        return treeNode.get();
+    }
 protected:
     std::unique_ptr<wdfTreeNode> treeNode;
     bool isAdapted = true;
@@ -198,7 +204,7 @@ class OnePortComponent : public AdaptedLeafComponent
 public:
     OnePortComponent(juce::String svgFileName) : AdaptedLeafComponent(svgFileName)
     {
-
+        portOrientations.push_back(1);
     }
      
     void paint(juce::Graphics& g) override
@@ -220,9 +226,19 @@ public:
         g.drawArrow(wBLine, 1.5, 10,4);
         g.drawArrow(wALine, 1.5, 10,4);
         g.drawLine(wBAdapted,1.5);
+        
+        std::cout << "port orientation" << portOrientations[0] << std::endl;
+    }
+    
+    void connect(CircuitComponent* c) override {
+        //Check if at right side
+        if(c->getX() == getX() + 100 && c->getY() == getY()){
+            std::cout << "connected" << std::endl;
+        }
     }
 protected:
     juce::Line<float> wBLine;
+    
     
 };
 
@@ -269,6 +285,7 @@ public:
             g.drawArrow(l, 1.5, 10,4);
            
          }
+        
     }
     
     void connectChild(wdfTreeNode *newChild){
@@ -282,6 +299,7 @@ public:
 protected:
     wdfTreeNode* child;
     std::vector<juce::Line<float>> portLines;
+    
 };
 
 class Inverter_ : public TwoPortComponent
@@ -342,12 +360,36 @@ protected:
 
 class Series_ : public ThreePortComponent
 {
+public:
+    Series_() : ThreePortComponent("series.svg")
+    {
+        
+    }
     
+    wdfTreeNode * createWDFComponent() override{
+        if(leftChild != nullptr && rightChild != nullptr){
+            treeNode.reset(new wdfTerminatedSeries(leftChild,rightChild));
+        }
+        else return nullptr;
+        return treeNode.get();
+    }
 };
 
 class Parallel_ : public ThreePortComponent
 {
+public:
+Parallel_() : ThreePortComponent("par.svg")
+{
     
+}
+
+wdfTreeNode * createWDFComponent() override{
+    if(leftChild != nullptr && rightChild != nullptr){
+        treeNode.reset(new wdfTerminatedParallel(leftChild,rightChild));
+    }
+    else return nullptr;
+    return treeNode.get();
+}
 };
 
 
@@ -1246,6 +1288,7 @@ public:
     //Component* getComponentToConnect(Component* child);
     bool isConnectable(int x, int y);
     bool wantsToConnect(juce::Component* c);
+    bool wantsToConnect_(CircuitComponent* c);
     
     static void printSomething(){
         std::cout << "hello world" << std::endl;

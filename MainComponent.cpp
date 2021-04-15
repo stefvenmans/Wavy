@@ -162,12 +162,18 @@ MainComponent::MainComponent()
             case 8:
                 schematic.addAndMakeVisible(leafComponents.add(new Resistor_()));
                 leafComponents.getLast()->setBounds(20,20,100,100);
+                leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
                 break;
                 
             case 9:
-            schematic.addAndMakeVisible(leafComponents.add(new Inverter_()));
-            leafComponents.getLast()->setBounds(20,20,100,100);
-            break;
+                schematic.addAndMakeVisible(leafComponents.add(new Inverter_()));
+                leafComponents.getLast()->setBounds(20,20,100,100);
+                break;
+                
+            case 10:
+                schematic.addAndMakeVisible(leafComponents.add(new Series_()));
+                leafComponents.getLast()->setBounds(20,20,100,100);
+                break;
         }
     };
     
@@ -257,6 +263,17 @@ bool MainComponent::wantsToConnect(juce::Component* c){
     }
     std::cout << "component can't connect" << std::endl;
     return false;
+}
+
+bool MainComponent::wantsToConnect_(CircuitComponent* c)
+{
+    for(auto i: leafComponents){
+        if(i->getX() + c->getRotationX()*100 == c->getX() && i->getY() + c->getRotationY()*100 == c->getY()){
+            std::cout << "circuit could connect"<< std::endl;
+            c->connect(i);
+            i->connect(c);
+        }
+    }
 }
 
 
