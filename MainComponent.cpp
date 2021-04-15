@@ -72,13 +72,13 @@ MainComponent::MainComponent()
         
         
         
-        leafComponents[0]->createWDFComponent();
+        //leafComponents[0]->createWDFComponent();
         
         
-        v1.createWDFComponent(10);
+        
         wdfEnvironment.setSubtreeEntryNodes(leafComponents[0]->createWDFComponent());
 //
-        wdfEnvironment.setRoot(v1.getWDFComponent());
+        wdfEnvironment.setRoot(simpleRoot->createWDFComponent());
 //
         wdfEnvironment.initTree();
         wdfEnvironment.adaptTree();
@@ -88,7 +88,7 @@ MainComponent::MainComponent()
 //        //res1Val.value = res1Slider.getValue();
         for(auto i=0; i<500; i++){
             wdfEnvironment.cycleWave();
-            std::cout << -leafComponents[2]->getWDFComponent()->upPort->getPortVoltage() << std::endl;
+            std::cout << -leafComponents[0]->getWDFComponent()->upPort->getPortVoltage() << std::endl;
         }
         //frontPanel.addNewComponent(new juce::Slider());
     };
@@ -128,6 +128,7 @@ MainComponent::MainComponent()
     componentSelector.addItem("NewResistor", 8);
     componentSelector.addItem("NewInverter", 9);
     componentSelector.addItem("NewSeries", 10);
+    componentSelector.addItem("NewIdealVolSource",11);
     addAndMakeVisible(componentSelector);
     
     componentSelector.onChange = [this](){
@@ -179,6 +180,11 @@ MainComponent::MainComponent()
                 leafComponents.getLast()->setBounds(20,20,100,100);
                 leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
                 break;
+            case 11:
+                simpleRoot = std::make_unique<IdealVoltageSource_>();
+                schematic.addAndMakeVisible(simpleRoot.get());
+                simpleRoot->setBounds(20,20,100,100);
+                simpleRoot->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
         }
     };
     
@@ -266,26 +272,45 @@ bool MainComponent::wantsToConnect(juce::Component* c){
             return true;
         }
     }
+    
+  
     std::cout << "component can't connect" << std::endl;
     return false;
 }
 
 bool MainComponent::wantsToConnect_(CircuitComponent* c)
 {
+    auto cX = c->getX();
+    auto cY = c->getY();
+    auto cW = c->getWidth();
+    auto cH = c->getHeight();
+    
     for(auto i: leafComponents){
         //if(i->getX() + c->getRotationX()*100 == c->getX() && i->getY() + c->getRotationY()*100 == c->getY()){
         auto iX = i->getX();
         auto iY = i->getY();
         auto iW = i->getWidth();
         auto iH = i->getHeight();
-        auto cX = c->getX();
-        auto cY = c->getY();
-        auto cW = c->getWidth();
-        auto cH = c->getHeight();
+        
         if(((iX+iW)==cX && iY==cY) || ((iY+iH)==cY && iX==cX) || ((cX+cW)==iX && cY==iY) || ((cY+cH)==iY && cX==iX)){
             std::cout << "circuit could connect"<< std::endl;
             c->connect(i);
             i->connect(c);
+            
+            c->repaint();
+            i->repaint();
+            //return true;
+        }
+    }
+    
+    if(simpleRoot != nullptr){
+        auto iX = simpleRoot.get()->getX();
+        auto iY = simpleRoot.get()->getY();
+        auto iW = simpleRoot.get()->getWidth();
+        auto iH = simpleRoot.get()->getHeight();
+        
+        if(((iX+iW)==cX && iY==cY) || ((iY+iH)==cY && iX==cX) || ((cX+cW)==iX && cY==iY) || ((cY+cH)==iY && cX==iX)){
+            std::cout << "a root want could connect to this component" << std::endl;
         }
     }
 }
