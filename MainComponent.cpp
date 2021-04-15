@@ -72,20 +72,23 @@ MainComponent::MainComponent()
         
         
         
-        v1.createWDFComponent(10);
-        wdfEnvironment.setSubtreeEntryNodes(((Series*)components[0])->getWDFComponent());
+        leafComponents[0]->createWDFComponent();
         
+        
+        v1.createWDFComponent(10);
+        wdfEnvironment.setSubtreeEntryNodes(leafComponents[0]->createWDFComponent());
+//
         wdfEnvironment.setRoot(v1.getWDFComponent());
-            
+//
         wdfEnvironment.initTree();
         wdfEnvironment.adaptTree();
-        
-        
-        wdfEnvironment.adaptTree();
-        //res1Val.value = res1Slider.getValue();
+//
+//
+//        wdfEnvironment.adaptTree();
+//        //res1Val.value = res1Slider.getValue();
         for(auto i=0; i<500; i++){
             wdfEnvironment.cycleWave();
-            std::cout << -((Resistor*)components[1])->getWDFComponent()->upPort->getPortVoltage() << std::endl;
+            std::cout << -leafComponents[2]->getWDFComponent()->upPort->getPortVoltage() << std::endl;
         }
         //frontPanel.addNewComponent(new juce::Slider());
     };
@@ -168,11 +171,13 @@ MainComponent::MainComponent()
             case 9:
                 schematic.addAndMakeVisible(leafComponents.add(new Inverter_()));
                 leafComponents.getLast()->setBounds(20,20,100,100);
+                leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
                 break;
                 
             case 10:
                 schematic.addAndMakeVisible(leafComponents.add(new Series_()));
                 leafComponents.getLast()->setBounds(20,20,100,100);
+                leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
                 break;
         }
     };
@@ -268,7 +273,16 @@ bool MainComponent::wantsToConnect(juce::Component* c){
 bool MainComponent::wantsToConnect_(CircuitComponent* c)
 {
     for(auto i: leafComponents){
-        if(i->getX() + c->getRotationX()*100 == c->getX() && i->getY() + c->getRotationY()*100 == c->getY()){
+        //if(i->getX() + c->getRotationX()*100 == c->getX() && i->getY() + c->getRotationY()*100 == c->getY()){
+        auto iX = i->getX();
+        auto iY = i->getY();
+        auto iW = i->getWidth();
+        auto iH = i->getHeight();
+        auto cX = c->getX();
+        auto cY = c->getY();
+        auto cW = c->getWidth();
+        auto cH = c->getHeight();
+        if(((iX+iW)==cX && iY==cY) || ((iY+iH)==cY && iX==cX) || ((cX+cW)==iX && cY==iY) || ((cY+cH)==iY && cX==iX)){
             std::cout << "circuit could connect"<< std::endl;
             c->connect(i);
             i->connect(c);

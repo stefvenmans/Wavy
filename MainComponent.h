@@ -93,6 +93,8 @@ public:
     
     void mouseDown(const juce::MouseEvent& e) override
     {
+        lastX = getX();
+        lastY = getY();
         if(e.mods.isCommandDown() && e.mods.isShiftDown()){
             rotate = true;
             shooldDrag = false;
@@ -136,11 +138,22 @@ public:
         }
         shooldDrag = true;
         
+        // should check if component moved
+        if(getX()!=lastX || getY()!=lastY){
+            for(auto c: isConnected){
+                c = false;
+            }
+            // get all child components and diconnect them
+            std::cout << "disconnect all" << std::endl;
+            repaint();
+        }
+        
         if(callBack != NULL){
             if(callBack(this)){
                 //isConnected = true;
             }
         }
+        
         
     }
     
@@ -163,6 +176,13 @@ public:
         
     }
     
+    bool hasOrientation(int orientation){
+        for(auto &o: portOrientations){
+            if(o == orientation) return true;
+        }
+        return false;
+    }
+    
 protected:
     juce::String svgFileName;
     std::unique_ptr<juce::Drawable> svgDrawable;
@@ -175,6 +195,10 @@ protected:
     std::vector<int> portOrientations;
     int sizeX;
     int sizeY;
+    std::vector<bool> isConnected;
+    int lastX;
+    int lastY;
+    
 };
 
 
@@ -188,12 +212,15 @@ public:
     }
     
     
-    virtual wdfTreeNode * createWDFComponent(){
+    virtual wdfTreeNode* createWDFComponent(){
         return treeNode.get();
     }
-    virtual wdfTreeNode * getWDFComponent(){
+    virtual wdfTreeNode* getWDFComponent(){
         return treeNode.get();
     }
+    
+    
+    
 protected:
     std::unique_ptr<wdfTreeNode> treeNode;
     bool isAdapted = true;
@@ -205,6 +232,7 @@ public:
     OnePortComponent(juce::String svgFileName) : AdaptedLeafComponent(svgFileName)
     {
         portOrientations.push_back(1);
+        isConnected.push_back(false);
     }
      
     void paint(juce::Graphics& g) override
@@ -227,15 +255,59 @@ public:
         g.drawArrow(wALine, 1.5, 10,4);
         g.drawLine(wBAdapted,1.5);
         
-        std::cout << "port orientation" << portOrientations[0] << std::endl;
+        for(auto c : isConnected){
+            if(c){
+                g.setColour(juce::Colours::red);
+                g.drawRect(0,0,100,100,5);
+            }
+        }
+        
+        //std::cout << "port orientation" << portOrientations[0] << std::endl;
     }
     
     void connect(CircuitComponent* c) override {
         //Check if at right side
-        if(c->getX() == getX() + 100 && c->getY() == getY()){
-            std::cout << "connected" << std::endl;
+        auto index = 0;
+        bool connectSuccesfull = false;
+        for(auto &o : portOrientations){
+            switch(o){
+                case 0:
+                    //Check if component is above + has orientation 2
+                    if(c->getY() + c->getHeight() == getY() && c->hasOrientation(2)){
+                        std::cout << "circuit will be able to connect to this side" << std::endl;
+                        connectSuccesfull = true;
+                    }
+                    break;
+                case 1:
+                    //Check if component is right + has orientation 3
+                    if(getX() + getWidth() == c->getX() && c->hasOrientation(3)){
+                        std::cout << "circuit will be able to connect to this side" << std::endl;
+                        connectSuccesfull = true;
+                    }
+                    break;
+                case 2:
+                    //Check if component is under + has orientation 0
+                    if(getY() + getHeight() == c->getY() && c->hasOrientation(0)){
+                        std::cout << "circuit will be able to connect to this side" << std::endl;
+                        connectSuccesfull = true;
+                    }
+                    break;
+                case 3:
+                    //Check if component is left + has orientation 1
+                    if(c->getX() + c->getWidth() == getX() && c->hasOrientation(1)){
+                        std::cout << "circuit will be able to connect to this side" << std::endl;
+                        connectSuccesfull = true;
+                    }
+                    break;
+            }
+            if(connectSuccesfull){
+                isConnected[index] = true;
+                return;
+            }
+            index++;
         }
     }
+    
 protected:
     juce::Line<float> wBLine;
     
@@ -250,9 +322,14 @@ public:
         
     }
     
+    wdfTreeNode* createWDFComponent() override{
+        treeNode.reset(new wdfTerminatedRes(1000));
+        return treeNode.get();
+    }
+    
     
 private:
-    std::unique_ptr<wdfTerminatedRes> r;
+    //std::unique_ptr<wdfTerminatedRes> r;
 };
 
 class Capacitor_ : public OnePortComponent
@@ -274,6 +351,12 @@ public:
         portLines.push_back(juce::Line<float>(0,20, 10.0f, 20));
         portLines.push_back(juce::Line<float>(100,80, 90, 80));
         portLines.push_back(juce::Line<float>(90,20, 90+ 10.0f, 20));
+        
+        portOrientations.push_back(1);
+        portOrientations.push_back(3);
+        
+        isConnected.push_back(false);
+        isConnected.push_back(false);
     }
     
     void paint(juce::Graphics& g) override
@@ -288,7 +371,7 @@ public:
         
     }
     
-    void connectChild(wdfTreeNode *newChild){
+    void connectChild(AdaptedLeafComponent* newChild){
         child = newChild;
     }
     
@@ -296,8 +379,55 @@ public:
         child = nullptr;
     }
     
+    void connect(CircuitComponent* c) override {
+        //Check if at right side
+        auto index = 0;
+        bool connectSuccesfull = false;
+        for(auto &o : portOrientations){
+            switch(o){
+                case 0:
+                    //Check if component is above + has orientation 2
+                    if(c->getY() + c->getHeight() == getY() && c->hasOrientation(2)){
+                        std::cout << "circuit will be able to connect to this side" << std::endl;
+                        connectSuccesfull = true;
+                    }
+                    break;
+                case 1:
+                    //Check if component is right + has orientation 3
+                    if(getX() + getWidth() == c->getX() && c->hasOrientation(3)){
+                        std::cout << "circuit will be able to connect to this side" << std::endl;
+                        connectSuccesfull = true;
+                    }
+                    break;
+                case 2:
+                    //Check if component is under + has orientation 0
+                    if(getY() + getHeight() == c->getY() && c->hasOrientation(0)){
+                        std::cout << "circuit will be able to connect to this side" << std::endl;
+                        connectSuccesfull = true;
+                    }
+                    break;
+                case 3:
+                    //Check if component is left + has orientation 1
+                    if(c->getX() + c->getWidth() == getX() && c->hasOrientation(1)){
+                        std::cout << "circuit will be able to connect to this side" << std::endl;
+                        connectSuccesfull = true;
+                    }
+                    break;
+            }
+            if(connectSuccesfull){
+                isConnected[index] = true;
+                if(index==0){
+                    child = (AdaptedLeafComponent*)c;
+                    std::cout << "child set" << std::endl;
+                }
+                return;
+            }
+            index++;
+        }
+    }
+    
 protected:
-    wdfTreeNode* child;
+    AdaptedLeafComponent* child;
     std::vector<juce::Line<float>> portLines;
     
 };
@@ -309,6 +439,13 @@ public:
     {
         
     }
+    
+    wdfTreeNode* createWDFComponent() override{
+        treeNode.reset(new wdfInverter(child->createWDFComponent()));
+        return treeNode.get();
+    }
+private:
+    //std::unique_ptr<wdfInverter> inv;
     
 };
 
@@ -323,6 +460,14 @@ public:
         portLines.push_back(juce::Line<float>(20,10, 20, 0));
         portLines.push_back(juce::Line<float>(100,80, 90, 80));
         portLines.push_back(juce::Line<float>(90,20, 90+ 10.0f, 20));
+        
+        portOrientations.push_back(1);
+        portOrientations.push_back(3);
+        portOrientations.push_back(0);
+        
+        isConnected.push_back(false);
+        isConnected.push_back(false);
+        isConnected.push_back(false);
     }
     
     void paint(juce::Graphics& g) override
@@ -336,11 +481,11 @@ public:
          }
     }
     
-    void connectLeftChild(wdfTreeNode *newLeftChild){
+    void connectLeftChild(AdaptedLeafComponent* newLeftChild){
         leftChild = newLeftChild;
     }
     
-    void connectRightChild(wdfTreeNode *newRightChild){
+    void connectRightChild(AdaptedLeafComponent* newRightChild){
         rightChild = newRightChild;
     }
     
@@ -352,9 +497,60 @@ public:
         rightChild = nullptr;
     }
     
+    void connect(CircuitComponent* c) override {
+        //Check if at right side
+        auto index = 0;
+        bool connectSuccesfull = false;
+        for(auto &o : portOrientations){
+            switch(o){
+                case 0:
+                    //Check if component is above + has orientation 2
+                    if(c->getY() + c->getHeight() == getY() && c->hasOrientation(2)){
+                        std::cout << "circuit will be able to connect to this side" << std::endl;
+                        connectSuccesfull = true;
+                    }
+                    break;
+                case 1:
+                    //Check if component is right + has orientation 3
+                    if(getX() + getWidth() == c->getX() && c->hasOrientation(3)){
+                        std::cout << "circuit will be able to connect to this side" << std::endl;
+                        connectSuccesfull = true;
+                    }
+                    break;
+                case 2:
+                    //Check if component is under + has orientation 0
+                    if(getY() + getHeight() == c->getY() && c->hasOrientation(0)){
+                        std::cout << "circuit will be able to connect to this side" << std::endl;
+                        connectSuccesfull = true;
+                    }
+                    break;
+                case 3:
+                    //Check if component is left + has orientation 1
+                    if(c->getX() + c->getWidth() == getX() && c->hasOrientation(1)){
+                        std::cout << "circuit will be able to connect to this side" << std::endl;
+                        connectSuccesfull = true;
+                    }
+                    break;
+            }
+            if(connectSuccesfull){
+                isConnected[index] = true;
+                if(index==0){
+                    rightChild = (AdaptedLeafComponent*)c;
+                    std::cout << "right child set" << std::endl;
+                }
+                else if(index==1){
+                    leftChild = (AdaptedLeafComponent*)c;
+                    std::cout << "left child set" << std::endl;
+                }
+                return;
+            }
+            index++;
+        }
+    }
+    
 protected:
-    wdfTreeNode* leftChild;
-    wdfTreeNode* rightChild;
+    AdaptedLeafComponent* leftChild;
+    AdaptedLeafComponent* rightChild;
     std::vector<juce::Line<float>> portLines;
 };
 
@@ -368,7 +564,7 @@ public:
     
     wdfTreeNode * createWDFComponent() override{
         if(leftChild != nullptr && rightChild != nullptr){
-            treeNode.reset(new wdfTerminatedSeries(leftChild,rightChild));
+            treeNode.reset(new wdfTerminatedSeries(leftChild->createWDFComponent(),rightChild->createWDFComponent()));
         }
         else return nullptr;
         return treeNode.get();
@@ -385,7 +581,7 @@ Parallel_() : ThreePortComponent("par.svg")
 
 wdfTreeNode * createWDFComponent() override{
     if(leftChild != nullptr && rightChild != nullptr){
-        treeNode.reset(new wdfTerminatedParallel(leftChild,rightChild));
+        treeNode.reset(new wdfTerminatedParallel(leftChild->createWDFComponent(),rightChild->createWDFComponent()));
     }
     else return nullptr;
     return treeNode.get();
