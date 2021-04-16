@@ -1,20 +1,5 @@
 #include "MainComponent.h"
 
-
-//bool isConnectable(int x, int y)
-//{
-////    for(auto c: MainComponent::components){
-////        if(c->getX() == x && c->getY() == y) return true;
-////    }
-//    std::cout << x << "  -  " << y << std::endl;
-//    MainComponent::printSomething();
-//    if(x>100){
-//    return true;
-//    }
-//    return false;
-//}
-
-
 //==============================================================================
 MainComponent::MainComponent()
 {
@@ -24,13 +9,7 @@ MainComponent::MainComponent()
     
     //GUI
     
-    schematic.addAndMakeVisible(circuitComponent);
-    circuitComponent.setBounds(100, 100, 100, 100);
-    
-    
-    
-    //sidePanel.setBounds(0,0,100,580);
-    
+    //TODO: set size in settings window
     addAndMakeVisible(schematic);
     schematic.centreWithSize(820*5, 580*5);
     
@@ -39,71 +18,31 @@ MainComponent::MainComponent()
     viewPort.setBounds(0, 0, 820, 420);
     viewPort.setScrollBarsShown(true,true);
     
-    
-    
     addAndMakeVisible(propertyPanel);
     propertyPanelViewPort.setViewedComponent(&propertyPanel, false);
     addChildComponent(propertyPanelViewPort);
     propertyPanelViewPort.setScrollBarsShown(true, false);
     propertyPanel.setBounds(0, 0, 250, 1000);
-    
     propertyPanel.setOutputCallbackFunction(std::bind(&MainComponent::setOutput,this,std::placeholders::_1));
-    
-    
-    addAndMakeVisible(r1);
-    addAndMakeVisible(r2);
-    addAndMakeVisible(s1);
-    addAndMakeVisible(v1);
-    
-    addAndMakeVisible(c1);
-    addAndMakeVisible(p1);
     
     addAndMakeVisible(frontPanel);
     frontPanel.setBounds(0,420,820,580-420);
     
-    frontPanel.addNewComponent(new juce::Slider());
-   
-    
-    
-    
-//    addAndMakeVisible(components.add(new Resistor()));
-//    addAndMakeVisible(components.add(new Series()));
-//    addAndMakeVisible(components.add(new DraggableComp()));
-    
-    //addAndMakeVisible(draggableComp);
-    //draggableComp.setBounds(40,40,100,100);
-    
     addAndMakeVisible(textButton);
     textButton.onClick = [this](){
-        //draggableComp.setSize(50, 50);
-//        scale -= .05;
-//        schematic.setTransform(getTransform().scale(scale, scale));
-        
-        //((wdfTerminatedRes*)(r1.getWDFComponent()))->R = res1Slider.getValue();
-        
-        
-        
-        //leafComponents[0]->createWDFComponent();
-        
-        
-        
         wdfEnvironment.setSubtreeEntryNodes(simpleRoot->getChildComponent()->createWDFComponent());
-//
         wdfEnvironment.setRoot(simpleRoot->createWDFComponent());
-//
+
         wdfEnvironment.initTree();
         wdfEnvironment.adaptTree();
-//
-//
-//        wdfEnvironment.adaptTree();
-//        //res1Val.value = res1Slider.getValue();
+
         for(auto i=0; i<500; i++){
             wdfEnvironment.cycleWave();
             if(outputIndex != -1 && outputIndex < leafComponents.size()){
                 std::cout << -leafComponents[outputIndex]->getWDFComponent()->upPort->getPortVoltage() << std::endl;
             }
+            else std::cout << "No output set!" << std::endl;
         }
-        //frontPanel.addNewComponent(new juce::Slider());
     };
     
     addAndMakeVisible(showLibraryButton);
@@ -115,8 +54,6 @@ MainComponent::MainComponent()
 //            setSize(1000,getHeight());
 //            viewPort.setBounds(sidePanel.getWidth(), 0, getWidth()-sidePanel.getWidth(), getHeight()-160);
 //        frontPanel.setBounds(sidePanel.getWidth(),getHeight()-160,getWidth()-sidePanel.getWidth(),580-420);
-//
-//
 //        }
 //        else{
 //            viewPort.setBounds(0, 0, getWidth(), getHeight()-160);
@@ -125,91 +62,54 @@ MainComponent::MainComponent()
 //        }
         propertyPanelShowHide = false;
         resized();
-        
-        
     };
     
     
 //    addAndMakeVisible(sidePanel);
 //    sidePanel.setBounds(300,300,200,300);
     
-    componentSelector.addItem("Resistor", 1);
-    componentSelector.addItem("Capacitor",2);
-    componentSelector.addItem("Parallel Adapter",3);
-    componentSelector.addItem("Series Adapter",4);
-    componentSelector.addItem("Ideal Voltage Source", 5);
-    componentSelector.addItem("R-Node",6);
-    componentSelector.addItem("Dummy item",7);
-    componentSelector.addItem("NewResistor", 8);
-    componentSelector.addItem("NewInverter", 9);
-    componentSelector.addItem("NewSeries", 10);
-    componentSelector.addItem("NewIdealVolSource",11);
+    componentSelector.addItem("NewResistor", 1);
+    componentSelector.addItem("NewInverter", 2);
+    componentSelector.addItem("NewSeries", 3);
+    componentSelector.addItem("NewIdealVolSource",4);
+    componentSelector.addItem("-",5);
     addAndMakeVisible(componentSelector);
     
     componentSelector.onChange = [this](){
         switch(componentSelector.getSelectedId()){
             case 1:
-                schematic.addAndMakeVisible(components.add(new Resistor()));
-                components.getLast()->setBounds(20,20,100,100);
-                ((Resistor*)(components.getLast()))->addHandler(std::bind(&MainComponent::wantsToConnect,this, std::placeholders::_1));
-                break;
-            case 2:
-                schematic.addAndMakeVisible(components.add(new Capacitor()));
-                components.getLast()->setBounds(20,20,100,100);
-                break;
-            case 3:
-                schematic.addAndMakeVisible(components.add(new Parallel()));
-                components.getLast()->setBounds(20,20,100,100);
-                break;
-            case 4:
-                schematic.addAndMakeVisible(components.add(new Series()));
-                components.getLast()->setBounds(20,20,100,100);
-                break;
-            case 5:
-                schematic.addAndMakeVisible(components.add(new IdealVSource()));
-                components.getLast()->setBounds(20,20,100,100);
-                break;
-            case 6:
-                schematic.addAndMakeVisible(components.add(new RNode()));
-                components.getLast()->setBounds(20,20,200,200);
-                break;
-            case 7:
-                schematic.addAndMakeVisible(components.add(new DraggableComp()));
-                components.getLast()->setBounds(20,20,100,100);
-                ((DraggableComp*)(components.getLast()))->addHandler(std::bind(&MainComponent::isConnectable,this, std::placeholders::_1, std::placeholders::_2));
-                break;
-            case 8:
                 schematic.addAndMakeVisible(leafComponents.add(new Resistor_()));
                 leafComponents.getLast()->setBounds(20,20,100,100);
                 leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
                 leafComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
                 break;
                 
-            case 9:
+            case 2:
                 schematic.addAndMakeVisible(leafComponents.add(new Inverter_()));
                 leafComponents.getLast()->setBounds(20,20,100,100);
                 leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
                 leafComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
                 break;
                 
-            case 10:
+            case 3:
                 schematic.addAndMakeVisible(leafComponents.add(new Series_()));
                 leafComponents.getLast()->setBounds(20,20,100,100);
                 leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
                 leafComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
                 break;
-            case 11:
+            case 4:
                 simpleRoot = std::make_unique<IdealVoltageSource_>();
                 schematic.addAndMakeVisible(simpleRoot.get());
                 simpleRoot->setBounds(20,20,100,100);
                 simpleRoot->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
                 simpleRoot->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
+            case 5:
+                break;
         }
     };
     
     
-    //WDF
-    
+    //WDF param
     res1Val.name = "Resistor1";
     res1Val.ID = 0;
     res1Val.type = doubleParam;
@@ -224,26 +124,12 @@ MainComponent::MainComponent()
     addAndMakeVisible(res1Slider);
     
     wdfEnvironment.addParam(res1Val);
-    //s1.createWDFComponent(r1.createWDFComponent(wdfEnvironment.getParams()[0].value),r2.createWDFComponent(1000));
-    //v1.createWDFComponent(10);
-    //wdfEnvironment.setSubtreeEntryNodes(s1.getWDFComponent());
-    //wdfEnvironment.setRoot(v1.getWDFComponent());
-    
-//    wdfEnvironment.initTree();
-//    wdfEnvironment.adaptTree();
-    
-//    for(auto i=0; i<500; i++){
-//        wdfEnvironment.cycleWave();
-//        std::cout << -r1.getWDFComponent()->upPort->getPortVoltage() << std::endl;
-//    }
     
     
-    
+    // Library
     addAndMakeVisible(&sidePanel);
     sidePanel.setShadowWidth(0);
     setSize (820, 580);
-    
-    
     sidePanel.showOrHide(false);
 
     // Some platforms require permissions to open input channels so request that here
@@ -258,43 +144,6 @@ MainComponent::MainComponent()
         // Specify the number of input and output channels that we want to open
         setAudioChannels (2, 2);
     }
-}
-
-bool MainComponent::isConnectable(int x, int y)
-{
-    for(auto c: MainComponent::components){
-        if(c->getX() + 100 == x && c->getY() == y){
-            std::cout << "component is connected" << std::endl;
-            std::cout << c->getName() << std::endl;
-            return true;
-        }
-    }
-    std::cout << "component can't connect" << std::endl;
-    return false;
-}
-
-bool MainComponent::wantsToConnect(juce::Component* c){
-    std::cout << "size of components : " << components.size() << std::endl;
-    for(auto i: MainComponent::components){
-        if(i->getX() + ((Resistor*)c)->getRotationX()*100 == c->getX() && i->getY() + ((Resistor*)c)->getRotationY()*100 == c->getY()){
-            std::cout << "component is connected" << std::endl;
-            std::cout << c->getName() << std::endl;
-            //std::cout << "rotation: " << ((Resistor*)c)->getRotation() << std::endl;
-            
-            if(i->getName() == "Ser"){
-                //((Series*)(i))->getWDFComponent()->setLeftChild(((Resistor*)(c))->getWDFComponent());
-                ((Resistor*)c)->createWDFComponent(1);
-                ((Series*)i)->setChild(c);
-            }
-            
-            
-            return true;
-        }
-    }
-    
-  
-    std::cout << "component can't connect" << std::endl;
-    return false;
 }
 
 void MainComponent::openPropertyPanelForComponent(CircuitComponent* c){
@@ -451,9 +300,10 @@ void MainComponent::resized()
     auto stepX = getWidth()/numX;
     auto stepY = getHeight()/numY;
     
-    textButton.setBounds(600,40,50,50);
-    res1Slider.setBounds(680,40,80,200);
-    componentSelector.setBounds(600,240,100,30);
+    textButton.setBounds(getWidth()-200,40,50,50);
+    showLibraryButton.setBounds(getWidth()-200,40*2+80,50,50);
+    //res1Slider.setBounds(680,40,80,200);
+    componentSelector.setBounds(getWidth()-200,40+80,100,30);
     
 //    for (auto x = 0; x < numX; ++x)
 //        {
