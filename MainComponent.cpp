@@ -61,6 +61,9 @@ MainComponent::MainComponent()
 //            sidePanel.showOrHide(false);
 //        }
         propertyPanelShowHide = false;
+        
+        schematic.repaint();
+        
         resized();
     };
     
@@ -68,11 +71,17 @@ MainComponent::MainComponent()
 //    addAndMakeVisible(sidePanel);
 //    sidePanel.setBounds(300,300,200,300);
     
-    componentSelector.addItem("NewResistor", 1);
-    componentSelector.addItem("NewInverter", 2);
-    componentSelector.addItem("NewSeries", 3);
-    componentSelector.addItem("NewIdealVolSource",4);
-    componentSelector.addItem("-",5);
+    componentSelector.addItem("Resistor", 1);
+    componentSelector.addItem("Capacitor",2);
+    componentSelector.addItem("Inverter", 3);
+    componentSelector.addItem("Y-Parameter Amplifier",4);
+    componentSelector.addItem("Series", 5);
+    componentSelector.addItem("Parallel",6);
+    componentSelector.addItem("IdealVolSource",7);
+    componentSelector.addItem("R Node",8);
+    componentSelector.addItem("Resistive Voltage Source",9);
+    componentSelector.addItem("Short Circuit",10);
+    componentSelector.addItem("-",11);
     addAndMakeVisible(componentSelector);
     
     componentSelector.onChange = [this](){
@@ -85,25 +94,66 @@ MainComponent::MainComponent()
                 break;
                 
             case 2:
-                schematic.addAndMakeVisible(leafComponents.add(new Inverter_()));
+                schematic.addAndMakeVisible(leafComponents.add(new Capacitor_()));
                 leafComponents.getLast()->setBounds(20,20,100,100);
                 leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
                 leafComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
                 break;
                 
             case 3:
+                schematic.addAndMakeVisible(leafComponents.add(new Inverter_()));
+                leafComponents.getLast()->setBounds(20,20,100,100);
+                leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
+                leafComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
+                break;
+                
+            case 4:
+                schematic.addAndMakeVisible(leafComponents.add(new YParameterAmp()));
+                leafComponents.getLast()->setBounds(20,20,200,100);
+                leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
+                leafComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
+                break;
+                
+            case 5:
                 schematic.addAndMakeVisible(leafComponents.add(new Series_()));
                 leafComponents.getLast()->setBounds(20,20,100,100);
                 leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
                 leafComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
                 break;
-            case 4:
+                
+            case 6:
+                schematic.addAndMakeVisible(leafComponents.add(new Parallel_()));
+                leafComponents.getLast()->setBounds(20,20,100,100);
+                leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
+                leafComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
+                break;
+            case 7:
                 simpleRoot = std::make_unique<IdealVoltageSource_>();
                 schematic.addAndMakeVisible(simpleRoot.get());
                 simpleRoot->setBounds(20,20,100,100);
                 simpleRoot->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
                 simpleRoot->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
-            case 5:
+                break;
+            case 8:
+                rNode = std::make_unique<RNode_>();
+                schematic.addAndMakeVisible(rNode.get());
+                rNode->setBounds(20, 20, 200 , 200);
+                rNode->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
+                break;
+            case 9:
+                schematic.addAndMakeVisible(leafComponents.add(new VoltageSource_()));
+                leafComponents.getLast()->setBounds(20,20,100,100);
+                leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
+                leafComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
+                break;
+            case 10:
+                simpleRoot = std::make_unique<ShortCircuit_>();
+                schematic.addAndMakeVisible(simpleRoot.get());
+                simpleRoot->setBounds(20,20,100,100);
+                simpleRoot->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
+                simpleRoot->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
+                break;
+            case 11:
                 break;
         }
     };
@@ -177,7 +227,7 @@ bool MainComponent::wantsToConnect_(CircuitComponent* c)
         }
     }
     
-    if(simpleRoot != nullptr){
+    if(simpleRoot != nullptr && c!=rNode.get()){
         auto iX = simpleRoot.get()->getX();
         auto iY = simpleRoot.get()->getY();
         auto iW = simpleRoot.get()->getWidth();
@@ -190,6 +240,28 @@ bool MainComponent::wantsToConnect_(CircuitComponent* c)
             
             c->repaint();
             simpleRoot->repaint();
+        }
+    }
+    
+    if(rNode != nullptr && c!=simpleRoot.get()){
+        
+        
+        for(auto i=0; i<rNode->getCollums(); i++){
+            for(auto j=0; j<rNode->getRows(); j++){
+                auto iX = rNode.get()->getX() + (rNode.get()->getWidth()/rNode->getCollums())*(i);
+                auto iY = rNode.get()->getY() + (rNode.get()->getHeight()/rNode->getRows())*(j);
+                auto iW = rNode.get()->getWidth();
+                auto iH = rNode.get()->getHeight();
+                
+                if(((iX+iW)==cX && iY==cY) || ((iY+iH)==cY && iX==cX) || ((cX+cW)==iX && cY==iY) || ((cY+cH)==iY && cX==iX)){
+                    std::cout << "a r node want could connect to this component" << std::endl;
+                    c->connect(rNode.get());
+                    rNode->connect(c);
+                    
+                    c->repaint();
+                    rNode->repaint();
+                }
+            }
         }
     }
 }

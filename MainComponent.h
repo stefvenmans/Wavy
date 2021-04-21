@@ -7,7 +7,7 @@
 
 
 enum ComponentType {
-    L_RES,L_CAP,L_IND,L_VOL,L_CUR,A_INV,A_SER,A_PAR,SR_VOL,SR_CUR,NOT_SET
+    L_RES,L_CAP,L_IND,L_VOL,L_CUR,A_INV,A_SER,A_PAR,SR_VOL,SR_CUR,SR_SHC,NOT_SET
 };
 
 
@@ -37,6 +37,12 @@ public:
     
     void setSubtreeEntryNodes(wdfTreeNode * node){
         subtreeEntryNodes[0] = node;
+    }
+    
+    void setSubtreeEntryNodes(std::vector<wdfTreeNode*> nodes){
+        for(auto i=0; i<nodes.size(); i++){
+            subtreeEntryNodes[i] = nodes[i];
+        }
     }
     
     void setRoot(wdfRootNode * r){
@@ -406,6 +412,46 @@ private:
     
 };
 
+class VoltageSource_ : public OnePortComponent
+{
+public:
+    VoltageSource_() : OnePortComponent("vol.svg")
+    {
+        Vs = 1;
+        Rs = 1;
+    }
+    
+    wdfTreeNode* createWDFComponent() override{
+        treeNode.reset(new wdfTerminatedResVSource(Vs,Rs));
+        return treeNode.get();
+    }
+    
+    ComponentType getComponentType() override{
+        return ComponentType::L_VOL;
+    }
+    
+    void setVs(double newVs){
+        Vs = newVs;
+    }
+    
+    double getVs(){
+        return Vs;
+    }
+    
+    void setRs(double newRs){
+        Rs = newRs;
+    }
+    
+    double getRs(){
+        return Rs;
+    }
+    
+private:
+    double Vs;
+    double Rs;
+    
+};
+
 class TwoPortComponent : public AdaptedLeafComponent
 {
 public:
@@ -511,6 +557,53 @@ public:
     
     ComponentType getComponentType() override{
         return ComponentType::A_INV;
+    }
+};
+
+class YParameterAmp : public TwoPortComponent
+{
+public:
+    YParameterAmp() : TwoPortComponent("y-par-amp.svg")
+    {
+        auto svgFile = juce::File::getCurrentWorkingDirectory().getChildFile(svgFileName);
+        svgDrawable = juce::Drawable::createFromSVGFile(svgFile);
+        if (svgDrawable != nullptr)
+        {
+            if (auto svgDrawableComposite = dynamic_cast<juce::DrawableComposite*> (svgDrawable.get())){
+                svgDrawableComposite->setBoundingBox ({ static_cast<float>(getX()+10), static_cast<float>(getY()+10), 180.0f, 80.0f });
+            }
+        }
+    }
+    
+    wdfTreeNode* createWDFComponent() override{
+        treeNode.reset(new wdfInverter(child->createWDFComponent()));
+        return treeNode.get();
+    }
+    
+    ComponentType getComponentType() override{
+        return ComponentType::A_INV;
+    }
+    
+    void paint(juce::Graphics& g)  override
+    {
+        if(rotate){
+            angle += juce::MathConstants<float>::halfPi;
+            if(angle >= juce::MathConstants<float>::twoPi) angle = 0;
+            rotate = false;
+            this->setSize(getHeight(),getWidth());
+            auto svgFile = juce::File::getCurrentWorkingDirectory().getChildFile(svgFileName);
+            svgDrawable = juce::Drawable::createFromSVGFile(svgFile);
+            if (svgDrawable != nullptr)
+            {
+                if (auto svgDrawableComposite = dynamic_cast<juce::DrawableComposite*> (svgDrawable.get())){
+                    svgDrawableComposite->setBoundingBox ({ static_cast<float>(getX()+10), static_cast<float>(getY()+10), static_cast<float>(getWidth()-20), static_cast<float>(getHeight()-20) });
+                }
+            }
+        }
+        
+        //this->setTransform(juce::AffineTransform::rotation(angle));   //getTransform().rotated(angle, getWidth()/2, getHeight()/2);
+        svgDrawable->draw (g, getAlpha(),getTransform().rotated(angle, getWidth()/2, getHeight()/2));
+        std::cout << "paint called" << std::endl;
     }
 };
 
@@ -798,11 +891,156 @@ private:
     double Vs;
 };
 
+class ShortCircuit_ : public SimpleRootComponent
+{
+public:
+    ShortCircuit_() : SimpleRootComponent("shortcir.svg")
+    {
+        
+    }
+    
+    wdfRootNode * createWDFComponent() override{
+        if(child != nullptr){
+            root.reset(new wdfShortCircuit() );
+        }
+        else return nullptr;
+        return root.get();
+    }
+    
+    ComponentType getComponentType() override{
+        return ComponentType::SR_SHC;
+    }
+    
+};
+
 class NonLinearComponent : public CircuitComponent
 {
     
 };
 
+class RNode_ : public CircuitComponent
+{
+public:
+    RNode_() : CircuitComponent(""){
+        portOrientations.push_back(0);
+        portOrientations.push_back(0);
+        portOrientations.push_back(2);
+        portOrientations.push_back(2);
+        portOrientations.push_back(3);
+        portOrientations.push_back(3);
+        isConnected.push_back(false);
+        isConnected.push_back(false);
+        isConnected.push_back(false);
+        isConnected.push_back(false);
+        isConnected.push_back(false);
+        isConnected.push_back(false);
+        
+        childs.reserve(6);
+        childs.push_back(nullptr);
+        childs.push_back(nullptr);
+        childs.push_back(nullptr);
+        childs.push_back(nullptr);
+        childs.push_back(nullptr);
+        childs.push_back(nullptr);
+        
+        collumsX = 2;
+        rowsY = 2;
+    }
+    
+    void paint (juce::Graphics& g) override
+    {
+        //g.fillAll(juce::Colours::white);
+        if(rotate){
+            angle += juce::MathConstants<float>::halfPi;
+            if(angle >= juce::MathConstants<float>::twoPi) angle = 0;
+            rotate = false;
+        }
+        
+        //this->setTransform(getTransform().rotated(angle, getWidth()/2, getHeight()/2));
+        ///g.setFont(juce::Font("Lucida Calligraphy",60.0f,2));
+        g.setFont(juce::Font("Lucida Handwriting",60.0f,2));
+        g.drawText ("R", getWidth()/2-30, getHeight()/2-30, 60, 60, juce::Justification::centred);
+        
+        //auto rec = juce::Rectangle<float>(getWidth()/2-30, getHeight()/2-30, 60, 60);
+        
+        //rec.transformedBy(getTransform().rotated(angle, getWidth()/2, getHeight()/2));
+        
+        //g.drawText ("text", rec, juce::Justification::centred);
+        g.setColour(juce::Colours::black);
+        g.drawRect(10,10,180,180,2);
+    }
+    
+    void connect(CircuitComponent* c) override {
+        //Check if at right side
+        auto index = 0;
+        bool connectSuccesfull = false;
+        for(auto &o : portOrientations){
+            switch(o){
+                case 0:
+                    //Check if component is above + has orientation 2
+                    for(auto i=0 ; i<collumsX; i++){
+                        if(c->getY() + c->getHeight() == getY() + i*getWidth() && c->hasOrientation(2)){
+                            std::cout << "circuit will be able to connect to this side" << std::endl;
+                            connectSuccesfull = true;
+                            childs.insert(childs.begin()+i,(AdaptedLeafComponent*)c);
+                        }
+                    }
+                    break;
+                case 1:
+                    //Check if component is right + has orientation 3
+                    for(auto i=0; i<rowsY; i++){
+                        if(getX() + getWidth() + i*getHeight() == c->getX() && c->hasOrientation(3)){
+                            std::cout << "circuit will be able to connect to this side" << std::endl;
+                            connectSuccesfull = true;
+                            //childs.insert(childs.begin()+i + 2,c);
+                        }
+                    }
+                    break;
+                case 2:
+                    //Check if component is under + has orientation 0
+                    for(auto i=0 ; i<collumsX; i++){
+                        if(getY() + getHeight() + i*getWidth() == c->getY() && c->hasOrientation(0)){
+                            std::cout << "circuit will be able to connect to this side" << std::endl;
+                            connectSuccesfull = true;
+                            childs.insert(childs.begin()+i + 2,(AdaptedLeafComponent*)c);
+                        }
+                    }
+                    break;
+                case 3:
+                    //Check if component is left + has orientation 1
+                    for(auto i=0; i<rowsY; i++){
+                        if(c->getX() + c->getWidth() == getX() + i*getHeight() && c->hasOrientation(1)){
+                            std::cout << "circuit will be able to connect to this side" << std::endl;
+                            connectSuccesfull = true;
+                            childs.insert(childs.begin()+i + 4,(AdaptedLeafComponent*)c);
+                        }
+                    }
+                    break;
+            }
+            if(connectSuccesfull){
+                isConnected[index] = true;
+//                for(auto child : childs){
+//                    std::cout << child << std::endl;
+//                }
+                
+                return;
+            }
+            index++;
+        }
+    }
+    
+    int getCollums(){
+        return collumsX;
+    }
+    int getRows(){
+        return rowsY;
+    }
+private:
+    std::vector<AdaptedLeafComponent*> childs;
+    int rowsY;
+    int collumsX;
+    
+};
 
 
 
@@ -1657,7 +1895,14 @@ public:
 
         float lineThickness = 0.75f;
         g.strokePath (sineGraph, juce::PathStrokeType(lineThickness));
+        
+        
     }
+    
+    void mouseDown(const juce::MouseEvent& e) override{
+           std::cout << "mouse down was called" << std::endl;
+       }
+    
 private:
     juce::Label l1;
     DraggableComp dragComp;
@@ -1671,15 +1916,15 @@ public:
     PropertyPanel()
     {
         addAndMakeVisible(componentName);
-        componentName.setBounds(0,0,100,20);
+        componentName.setBounds(5,0,100,20);
         
         addChildComponent(prop1);
         prop1.setEditable(true);
-        prop1.setBounds(0,30,100,20);
+        prop1.setBounds(5,30,100,20);
         prop1.addListener(this);
         
         addAndMakeVisible(setOutput);
-        setOutput.setBounds(0,70,20,20);
+        setOutput.setBounds(5,70,25,25);
         setOutput.addListener(this);
     }
     
@@ -1699,16 +1944,34 @@ public:
                 prop1.setVisible(true);
                 break;
             case L_CAP:
-                
+                std::cout << " i am a capacitor" << std::endl;
+                componentName.setText("Capacitor",juce::NotificationType::dontSendNotification);
+                prop1.setText(juce::String(((Capacitor_*)c)->getC()),juce::NotificationType::dontSendNotification);
+                prop1.setVisible(true);
+                break;
+            case L_VOL:
+                componentName.setText("Resistive Voltage Source",juce::NotificationType::dontSendNotification);
+                prop1.setText(juce::String(((VoltageSource_*)c)->getVs()),juce::NotificationType::dontSendNotification);
+                prop1.setVisible(true);
                 break;
             case A_INV:
-                
+                componentName.setText("Inverter",juce::NotificationType::dontSendNotification);
+                prop1.setVisible(false);
                 break;
             case A_SER:
-                
+                componentName.setText("Serries",juce::NotificationType::dontSendNotification);
+                prop1.setVisible(false);
                 break;
             case A_PAR:
+                componentName.setText("Parallel",juce::NotificationType::dontSendNotification);
+                prop1.setVisible(false);
+                break;
                 
+            case SR_VOL:
+                std::cout << " i am a ROOT : voltage source" << std::endl;
+                componentName.setText("ROOT Voltage Source",juce::NotificationType::dontSendNotification);
+                prop1.setText(juce::String(((IdealVoltageSource_*)c)->getVs()),juce::NotificationType::dontSendNotification);
+                prop1.setVisible(true);
                 break;
         }
         
@@ -1720,7 +1983,10 @@ public:
                 ((Resistor_*)componentLastSelected)->setR(prop1.getText().getDoubleValue());
                 break;
             case L_CAP:
-                
+                ((Capacitor_*)componentLastSelected)->setC(prop1.getText().getDoubleValue());
+                break;
+            case L_VOL:
+                ((VoltageSource_*)componentLastSelected)->setVs(prop1.getText().getDoubleValue());
                 break;
             case A_INV:
                 
@@ -1731,6 +1997,10 @@ public:
             case A_PAR:
                 
                 break;
+            case SR_VOL:
+                ((IdealVoltageSource_*)componentLastSelected)->setVs(prop1.getText().getDoubleValue());
+                break;
+                
         }
     }
     
@@ -1821,6 +2091,8 @@ private:
     juce::Viewport viewPort;
     //juce::BlockField blockField;
     
+   
+    
     
     PropertyPanel propertyPanel;
     juce::Viewport propertyPanelViewPort;
@@ -1838,6 +2110,7 @@ private:
     
     Resistor_ circuitComponent{};
     std::unique_ptr<SimpleRootComponent> simpleRoot;
+    std::unique_ptr<RNode_> rNode;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };
