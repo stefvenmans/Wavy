@@ -26,7 +26,11 @@ public:
         
     }
     int setRootMatrData( matData* rootMatrixData, double *Rp ){
-        
+        for ( unsigned int ii = 0; ii < Smat.n_cols; ++ii ) {
+                for ( unsigned int jj = 0; jj < Smat.n_rows; ++jj ) {
+                    rootMatrixData->Smat.at(ii, jj) = Smat.at(ii,jj);
+                }
+        }
     }
     const char* getTreeIdentifier( ){
         
@@ -40,9 +44,13 @@ public:
     }
     
     void setSubtreeEntryNodes(std::vector<wdfTreeNode*> nodes){
+        subtreeCount = nodes.size();
+        subtreeEntryNodes = new wdfTreeNode*[subtreeCount];
         for(auto i=0; i<nodes.size(); i++){
             subtreeEntryNodes[i] = nodes[i];
         }
+        root.reset(new wdfRootRtype(subtreeCount));
+        Rp = new double[subtreeCount]();
     }
     
     void setRoot(wdfRootNode * r){
@@ -54,6 +62,11 @@ public:
         params.push_back(p);
     }
     
+    void setSMat(mat newSMat){
+        Smat = newSMat;
+    }
+private:
+    mat Smat;
 };
 
 
@@ -758,7 +771,7 @@ public:
 class SimpleRootComponent : public CircuitComponent
 {
 public:
-    SimpleRootComponent(juce::String svgFileName) : CircuitComponent(svgFileName)
+    SimpleRootComponent(juce::String svgFileName) : CircuitComponent(svgFileName), child(nullptr)
     {
         portOrientations.push_back(1);
         isConnected.push_back(false);
@@ -935,7 +948,7 @@ public:
         isConnected.push_back(false);
         isConnected.push_back(false);
         
-        childs.reserve(6);
+        //childs.reserve(6);
         childs.push_back(nullptr);
         childs.push_back(nullptr);
         childs.push_back(nullptr);
@@ -945,6 +958,8 @@ public:
         
         collumsX = 2;
         rowsY = 2;
+        
+        childsA = new AdaptedLeafComponent*[6];
     }
     
     void paint (juce::Graphics& g) override
@@ -979,40 +994,48 @@ public:
                 case 0:
                     //Check if component is above + has orientation 2
                     for(auto i=0 ; i<collumsX; i++){
-                        if(c->getY() + c->getHeight() == getY() + i*getWidth() && c->hasOrientation(2)){
-                            std::cout << "circuit will be able to connect to this side" << std::endl;
+                        if(c->getY() + c->getHeight() == getY() && c->getX() == getX() + i*(getWidth()/collumsX) && c->hasOrientation(2)){
+                            std::cout << "circuit will be able to connect to this side : " << o << "with index : " << i << std::endl;
                             connectSuccesfull = true;
                             childs.insert(childs.begin()+i,(AdaptedLeafComponent*)c);
+                            childsA[i] = (AdaptedLeafComponent*)c;
+                            //std::cout << "inserted at index: " << childs.begin()+i << std::endl;
+                            return;
                         }
                     }
                     break;
                 case 1:
                     //Check if component is right + has orientation 3
                     for(auto i=0; i<rowsY; i++){
-                        if(getX() + getWidth() + i*getHeight() == c->getX() && c->hasOrientation(3)){
-                            std::cout << "circuit will be able to connect to this side" << std::endl;
+                        if(getX() + getWidth() == c->getX() && c->getY() == getY() + i*(getHeight()/rowsY) && c->hasOrientation(3)){
+                            std::cout << "circuit will be able to connect to this side : " << o << "with index : " << i << std::endl;
                             connectSuccesfull = true;
                             //childs.insert(childs.begin()+i + 2,c);
+                            return;
                         }
                     }
                     break;
                 case 2:
                     //Check if component is under + has orientation 0
                     for(auto i=0 ; i<collumsX; i++){
-                        if(getY() + getHeight() + i*getWidth() == c->getY() && c->hasOrientation(0)){
-                            std::cout << "circuit will be able to connect to this side" << std::endl;
+                        if(getY() + getHeight() == c->getY() && c->getX() == getX() + i*(getWidth()/collumsX) && c->hasOrientation(0)){
+                            std::cout << "circuit will be able to connect to this side : " << o << "with index : " << i + 2 << std::endl;
                             connectSuccesfull = true;
                             childs.insert(childs.begin()+i + 2,(AdaptedLeafComponent*)c);
+                            childsA[i + 2] = (AdaptedLeafComponent*)c;
+                            return;
                         }
                     }
                     break;
                 case 3:
                     //Check if component is left + has orientation 1
                     for(auto i=0; i<rowsY; i++){
-                        if(c->getX() + c->getWidth() == getX() + i*getHeight() && c->hasOrientation(1)){
-                            std::cout << "circuit will be able to connect to this side" << std::endl;
+                        if(c->getX() + c->getWidth() == getX() && c->getY() == getY() + i*(getHeight()/rowsY) && c->hasOrientation(1)){
+                            std::cout << "circuit will be able to connect to this side : " << o << "with index : " << i + 4 << std::endl;
                             connectSuccesfull = true;
                             childs.insert(childs.begin()+i + 4,(AdaptedLeafComponent*)c);
+                            childsA[i + 4] = (AdaptedLeafComponent*)c;
+                            return;
                         }
                     }
                     break;
@@ -1035,8 +1058,33 @@ public:
     int getRows(){
         return rowsY;
     }
+    
+//    wdfRootNode * createWDFComponent(){
+//        bool allChildsSet = true;
+//        for(auto &c: childs){
+//            if(c == nullptr) allChildsSet = false;
+//        }
+//        if(allChildsSet != false){
+//            //root.reset(new wdfRootRtype(childs.size()) );
+//        }
+//        else return nullptr;
+//        return root.get();
+//    }
+    
+    int getNumChilds(){
+        return childs.size();
+    }
+    
+    std::vector<wdfTreeNode*> getChildsWDFTreeNodes (){
+        std::vector<wdfTreeNode*> childsWDFTreeNodes;
+        for(auto i=0; i<6; i++){
+            childsWDFTreeNodes.push_back(childsA[i]->createWDFComponent());
+        }
+        return childsWDFTreeNodes;
+    }
 private:
     std::vector<AdaptedLeafComponent*> childs;
+    AdaptedLeafComponent** childsA;
     int rowsY;
     int collumsX;
     
@@ -1923,9 +1971,18 @@ public:
         prop1.setBounds(5,30,100,20);
         prop1.addListener(this);
         
+        addChildComponent(prop2);
+        prop2.setEditable(true);
+        prop2.setBounds(5,60,100,20);
+        prop2.addListener(this);
+        
         addAndMakeVisible(setOutput);
-        setOutput.setBounds(5,70,25,25);
+        setOutput.setBounds(5,100,25,25);
         setOutput.addListener(this);
+        
+        addAndMakeVisible(setInput);
+        setInput.setBounds(50,100,25,25);
+        setInput.addListener(this);
     }
     
     void paint (juce::Graphics& g) override{
@@ -1953,6 +2010,8 @@ public:
                 componentName.setText("Resistive Voltage Source",juce::NotificationType::dontSendNotification);
                 prop1.setText(juce::String(((VoltageSource_*)c)->getVs()),juce::NotificationType::dontSendNotification);
                 prop1.setVisible(true);
+                prop2.setText(juce::String(((VoltageSource_*)c)->getRs()),juce::NotificationType::dontSendNotification);
+                prop2.setVisible(true);
                 break;
             case A_INV:
                 componentName.setText("Inverter",juce::NotificationType::dontSendNotification);
@@ -1986,7 +2045,12 @@ public:
                 ((Capacitor_*)componentLastSelected)->setC(prop1.getText().getDoubleValue());
                 break;
             case L_VOL:
-                ((VoltageSource_*)componentLastSelected)->setVs(prop1.getText().getDoubleValue());
+                if (labelThatHasChanged == &prop1){
+                    ((VoltageSource_*)componentLastSelected)->setVs(prop1.getText().getDoubleValue());
+                }
+                else if (labelThatHasChanged == &prop2){
+                    ((VoltageSource_*)componentLastSelected)->setRs(prop2.getText().getDoubleValue());
+                }
                 break;
             case A_INV:
                 
@@ -2008,23 +2072,37 @@ public:
         setOutputOfCircuit = callback;
     }
     
-    void buttonStateChanged (juce::Button * b) override {
-        std::cout << "togle state changed" << std::endl;
-        if(b->getToggleState()){
-            setOutputOfCircuit(componentLastSelected);
+    void setInputCallbackFunction(std::function<void(CircuitComponent*cc)> callback){
+        setInputOfCircuit = callback;
+    }
+    
+    void buttonClicked (juce::Button * b) override {
+        //std::cout << "togle state changed" << std::endl;
+        if(b == &setOutput){
+            if(setOutput.getToggleState()==true){
+                std::cout << "output will be set" << std::endl;
+                setOutputOfCircuit(componentLastSelected);
+            }
+        }
+        else if(b == &setInput){
+            if(setInput.getToggleState()==true){
+                std::cout << "input will be set" << std::endl;
+                setInputOfCircuit(componentLastSelected);
+            }
         }
     }
     
-    void buttonClicked (juce::Button * b) override{
-        
-    }
+    
     
 private:
     juce::Label componentName;
     juce::Label prop1;
+    juce::Label prop2;
     CircuitComponent* componentLastSelected = nullptr;
     juce::ToggleButton setOutput;
+    juce::ToggleButton setInput;
     std::function<void(CircuitComponent* c)> setOutputOfCircuit;
+    std::function<void(CircuitComponent* c)> setInputOfCircuit;
 };
 
 
@@ -2065,6 +2143,10 @@ public:
     void openPropertyPanelForComponent(CircuitComponent* c);
     
     
+    void readAudio();
+    void processAudio();
+    void writeAudio();
+    
 private:
     //==============================================================================
     // Your private member variables go here...
@@ -2087,6 +2169,7 @@ private:
     juce::Slider res1Slider;
     juce::ComboBox componentSelector;
     juce::TextButton showLibraryButton;
+    juce::TextButton calculateMatButton;
     
     juce::Viewport viewPort;
     //juce::BlockField blockField;
@@ -2099,8 +2182,10 @@ private:
     bool propertyPanelShowHide = false;
     
     void setOutput(CircuitComponent* c);
+    void setInput(CircuitComponent* c);
     
     int outputIndex = -1;
+    int inputIndex = -1;
     
     float scale = 1.0f;
     paramData res1Val;
@@ -2111,6 +2196,14 @@ private:
     Resistor_ circuitComponent{};
     std::unique_ptr<SimpleRootComponent> simpleRoot;
     std::unique_ptr<RNode_> rNode;
+    
+    juce::AudioFormatManager formatManager;
+    juce::AudioSampleBuffer buffer_in;
+    juce::AudioSampleBuffer buffer_out;
+    juce::AudioFormatReader *reader;
+    
+    mat Smat;
+    //Smat.set_size(6, 6);
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };
