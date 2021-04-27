@@ -258,7 +258,7 @@ MainComponent::MainComponent()
             case 12:
                 rnode = std::make_unique<RNodeNew>();
                 schematic.addAndMakeVisible(rnode.get());
-                rnode->setBounds(100,100,200,200);
+                rnode->setCentrePosition(200, 200);
                 break;
         }
     };

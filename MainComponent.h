@@ -1918,9 +1918,9 @@ public:
 //        wires.add(new juce::Path());
 //        wires.getLast()->startNewSubPath(19,20);
 //        wires.getLast()->lineTo(100,20);
-        collums = 2;
-        rows = 2;
-        setSize(200,200);
+        collums = 1;
+        rows = 1;
+        setSize(collums*100,rows*100);
         
         gridSize = (getHeight()-2*borderOffset)/(rows*2-1);
         //North
@@ -1944,8 +1944,8 @@ public:
             std::cout << " point x : " << p->getX() << " y : " <<p->getY() << std::endl;
         }
         
-        //Create stamp indexes (4 sides)
-        for(auto i=0; i<(collums*2)*4 ; i++){
+        //Create stamp indexes (4 sides) -> -1 for not connected
+        for(auto i=0; i<((collums+rows)*2)*2 ; i++){
             resistorStampIndexes.push_back(-1);
             voltageSourceStampIndexes.push_back(-1);
         }
@@ -1953,9 +1953,23 @@ public:
         addAndMakeVisible(&printIndexButton);
         printIndexButton.setBounds(30,30,10,10);
         printIndexButton.onClick = [this](){
+            
+            if(wireNodeIndexes.size() == 0) return;
+            auto nInR = *(std::max_element(wireNodeIndexes.begin(),wireNodeIndexes.end())) + 1;
+            //Add outside node indexes to stamps
             for(auto i=0; i<resistorStampIndexes.size()/2; i++){
-                std::cout << "R" << i << " i:" << resistorStampIndexes[i*2] << " j:" << resistorStampIndexes[i*2+1] << std::endl;
+                resistorStampIndexes[i*2] = i+nInR;
+                voltageSourceStampIndexes[i*2+1] = i+nInR;
             }
+            
+            
+            for(auto i=0; i<resistorStampIndexes.size()/2; i++){
+                std::cout << "R" << i << " j:" << resistorStampIndexes[i*2] << " i:" << resistorStampIndexes[i*2+1] << "    V" << i << " j:" << voltageSourceStampIndexes[i*2] << " i:" << voltageSourceStampIndexes[i*2+1] << std::endl;
+                
+            }
+            
+            
+            calculateScatteringMatrix();
         };
     
     }
@@ -1991,6 +2005,71 @@ public:
     void resized() override{
         constrainer.setMinimumOnscreenAmounts (getHeight(), getWidth(),
         getHeight(), getWidth());
+    }
+    
+    void calculateScatteringMatrix(){
+        if(wireNodeIndexes.size() == 0) return;
+        
+        //const double R_val[6] = {1.0, 1e6, (1.0/44100.0)/(2.0*0.015e-6), (1.0/44100.0)/(2.0*0.015e-6), 1e6, 53.8e3};
+        const double R_val[4] = {1, 1, 1, 1};
+        const double G_val[4] = {1, 1, 1, 1};
+        
+        auto n = (collums+rows)*2;
+        auto nInR = *(std::max_element(wireNodeIndexes.begin(),wireNodeIndexes.end())) + 1;
+        auto nTotal = n + nInR;
+        
+        
+        
+        
+        mat I = eye(n, n);
+        mat R(n,n,fill::zeros);
+        for ( unsigned int ii = 0; ii < n; ++ii ) {
+                R.at(ii, ii) = R_val[ii];
+            }
+        mat Z1(n,n+nInR-1,fill::zeros);
+        Z1 = join_rows(Z1,I);
+        mat Z2 = trans(Z1);
+        
+        
+        mat Y(nTotal,nTotal,fill::zeros);
+        mat A(nTotal,n,fill::zeros);
+        mat B(n,nTotal,fill::zeros);
+        mat D(n,n,fill::zeros);
+        
+        //resistor stamp index j - i
+        //j = resistorStampIndexes[i*2]
+        //i = resistorStampIndexes[i*2+1]
+        
+        for(auto i=0; i<n; i++){
+            //Resistor stamps
+            Y.at(resistorStampIndexes[i*2+1],resistorStampIndexes[i*2+1]) = Y.at(resistorStampIndexes[i*2+1],resistorStampIndexes[i*2+1]) + G_val[i];
+            Y.at(resistorStampIndexes[i*2+1],resistorStampIndexes[i*2]) = Y.at(resistorStampIndexes[i*2+1],resistorStampIndexes[i*2]) - G_val[i];
+            Y.at(resistorStampIndexes[i*2],resistorStampIndexes[i*2+1]) = Y.at(resistorStampIndexes[i*2],resistorStampIndexes[i*2+1]) - G_val[i];
+            Y.at(resistorStampIndexes[i*2],resistorStampIndexes[i*2]) = Y.at(resistorStampIndexes[i*2],resistorStampIndexes[i*2]) + G_val[i];
+            
+            //VolSource stamps
+            A.at(voltageSourceStampIndexes[i*2+1],i) = A.at(voltageSourceStampIndexes[i*2+1],i) + 1;
+            A.at(voltageSourceStampIndexes[i*2],i) = A.at(voltageSourceStampIndexes[i*2],i) - 1;
+            B.at(i,voltageSourceStampIndexes[i*2+1]) = B.at(i,voltageSourceStampIndexes[i*2+1]) + 1;
+            B.at(i,voltageSourceStampIndexes[i*2]) = B.at(i,voltageSourceStampIndexes[i*2]) - 1;
+        }
+        Y.print();
+        A.print();
+        B.print();
+        
+        mat X1 = join_rows(Y,A);
+        mat X2 = join_rows(B,D);
+        mat X = join_cols(X1, X2);
+        
+        X.print();
+        
+        X = X.submat(1, 1, nTotal+n-1, nTotal+n-1);
+        
+        X.print();
+        
+        mat S = I + 2*R*Z1*inv(X)*Z2*I;
+        S.print();
+        Smat = S;
     }
     
     void mouseDown(const juce::MouseEvent& e) override{
@@ -2103,6 +2182,7 @@ public:
     
     int getXGrid(int x){
         gridSize = (getWidth()-2*borderOffset)/(collums*2-1);
+        std::cout << "getXGrid " << x << std::endl;
         //Check limits
         if(x<=borderOffset){
             if(x<borderOffset/2){
@@ -2181,6 +2261,7 @@ private:
     std::vector<int> wireNodeIndexes;
     int numberOfNodes = 0;
     juce::TextButton printIndexButton;
+    mat Smat;
 };
 
 
