@@ -1618,7 +1618,9 @@ class RNode : public juce::Component
 {
 public:
     RNode(){
-        
+//        wires.add(new juce::Path());
+//        wires.getLast()->startNewSubPath(19,20);
+//        wires.getLast()->lineTo(100,20);
     }
     
     void paint (juce::Graphics& g) override{
@@ -1630,43 +1632,49 @@ public:
         g.setColour (findColour (juce::TextButton::textColourOffId));
         g.drawFittedText ("R1", area, juce::Justification::centred, 1);
         
+        for(auto w: wires){
+            float lineThickness = 2.0f;
+            g.strokePath (*w, juce::PathStrokeType(lineThickness));
+        }
+        
         if(drawLine == true){
 //            auto mousePoint = getMouseXYRelative();
 //            endPoint = juce::Point<float>((float)(mousePoint.getX()),(float)mousePoint.getY());
             
             //endPoint = juce::Point<float>(getX(),getY());
             
+            
         }
         g.setColour(juce::Colours::black);
         
-        if(startPoint.getX() >= 50){
-            startPoint.setX(80);
-        }
-        else startPoint.setX(20);
-        
-        if(startPoint.getY() >= 50){
-            startPoint.setY(80);
-        }
-        else startPoint.setY(20);
-        
-        if(endPoint.getX() >= 50){
-            endPoint.setX(80);
-        }
-        else endPoint.setX(20);
-        
-        if(endPoint.getY() >= 50){
-            endPoint.setY(80);
-        }
-        else endPoint.setY(20);
-        
-        
-        for(auto i=0; i<linePoints.size()-1 ; i++){
-            if(i==0){
-                g.drawLine(juce::Line<float>(*linePoints.getFirst(),*linePoints.getUnchecked(1)),1.5);
-            }
-            else{ g.drawLine(juce::Line<float>(*linePoints.getUnchecked(i),*linePoints.getUnchecked(i+1)),1.5);
-            }
-        }
+//        if(startPoint.getX() >= 50){
+//            startPoint.setX(80);
+//        }
+//        else startPoint.setX(20);
+//
+//        if(startPoint.getY() >= 50){
+//            startPoint.setY(80);
+//        }
+//        else startPoint.setY(20);
+//
+//        if(endPoint.getX() >= 50){
+//            endPoint.setX(80);
+//        }
+//        else endPoint.setX(20);
+//
+//        if(endPoint.getY() >= 50){
+//            endPoint.setY(80);
+//        }
+//        else endPoint.setY(20);
+//
+//
+//        for(auto i=0; i<linePoints.size()-1 ; i++){
+//            if(i==0){
+//                g.drawLine(juce::Line<float>(*linePoints.getFirst(),*linePoints.getUnchecked(1)),1.5);
+//            }
+//            else{ g.drawLine(juce::Line<float>(*linePoints.getUnchecked(i),*linePoints.getUnchecked(i+1)),1.5);
+//            }
+//        }
         
         //g.drawLine(juce::Line<float>(startPoint, endPoint), 3);
     }
@@ -1712,12 +1720,105 @@ public:
             }
             else y = 20;
             
-            if(linePoints.isEmpty()){
-                linePoints.add(new juce::Point<float>(x, y));
+//            if(linePoints.isEmpty()){
+//                linePoints.add(new juce::Point<float>(x, y));
+//            }
+//            linePoints.add(new juce::Point<float>(x, y));
+            //lines.getLast->add(new juce::Point<float>(x, y));
+            
+            
+            // New path method
+            x = (float)e.getPosition().getX();
+            y = (float)e.getPosition().getY();
+            
+            if(x>=50){
+                if(x>=100){
+                    if(x>=150){
+                        x = 180;
+                    }
+                    else x = 120;
+                }
+                else x = 80;
+                
             }
-            linePoints.add(new juce::Point<float>(x, y));
+            else x = 20;
+            
+            if(y>=50){
+                if(y>=100){
+                    if(y>=150){
+                        y = 180;
+                    }
+                    else y = 120;
+                }
+                else y = 80;
+                
+            }
+            else y = 20;
+            
+            // is wire being drawed?
+            if(isDrawingWire){
+                bool lineOnPath = false;
+//                for(auto w: wires){
+//                    std::cout << "check if poin x: " << x << "  y: " << y << std::endl;
+//                    //std::cout << "endpoint : " << w->get
+//                    if(w->contains(x,y,1)){
+//                        //std::cout << "point is on path" << std::endl;
+//                    }
+//                    if(w->intersectsLine(juce::Line<float>(x-1,y-1,x+1,y+1),0)){
+//
+//                        //wires.add(new juce::Path());
+//                        wires.getLast()->lineTo(x,y);
+//                        std::cout << "line is on path" << std::endl;
+//                        lineOnPath = true;
+//                        isDrawingWire = false;
+//                        std::cout << "wire connected to other wire" << std::endl;
+//                    }
+//                }
+                auto p = juce::Point<float>(x,y);
+                for(auto lines: linesArray){
+                    for(auto l: *lines){
+                        if(p==l->findNearestPointTo(p)){
+                            linesArray.getLast()->getLast()->setEnd(x,y);
+                            lineOnPath = true;
+                            isDrawingWire = false;
+                        }
+                    }
+                }
+                if(lineOnPath != true){
+                    for(auto i=0; i<3; i++){
+                        if((x==20 && y==portPoints[i]) || (x==portPoints[i] && y==20) || (x==180 && y==portPoints[i])){
+                            //wires.getLast()->lineTo(x,y);
+                            linesArray.getLast()->getLast()->setEnd(x,y);
+                            lineOnPath = true;
+                            isDrawingWire = false;
+                            std::cout << "wire connected to other port" << std::endl;
+                        }
+                    }
+                }
+                if(lineOnPath != true){
+                    std::cout << "makes wire longer" << std::endl;
+                    linesArray.getLast()->getLast()->setEnd(x,y);
+                    linesArray.getLast()->add(new juce::Line<float>(x,y,x,y));
+                    //wires.getLast()->lineTo(x,y);
+                }
+            }
+            else{
+            //check if on path or if port + or -
+            
+            for(auto i=0; i<3; i++){
+                if((x==20 && y==portPoints[i]) || (x==portPoints[i] && y==20) || (x==180 && y==portPoints[i])){
+                    std::cout << "starting new wire" << std::endl;
+//                    wires.add(new juce::Path());
+//                    wires.getLast()->startNewSubPath(x,y);
+                    linesArray.add(new juce::OwnedArray<juce::Line<float>>);
+                    linesArray.getLast()->add(new juce::Line<float>(x,y,x,y));
+                    isDrawingWire = true;
+                }
+            }
+            
         }
         
+    }
     }
     void mouseDrag(const juce::MouseEvent& e) override{
         if(isDragging){
@@ -1753,7 +1854,13 @@ public:
             }
             else y = 20;
             
-            linePoints.getLast()->setXY(x,y);
+            if(isDrawingWire){
+                std::cout << "update wire" <<std::endl;
+                wires.getLast()->lineTo(x,y);
+                repaint();
+            }
+            
+            //linePoints.getLast()->setXY(x,y);
             repaint();
         }
     }
@@ -1781,6 +1888,14 @@ public:
         drawLine = true;
         isDragging = false;
     }
+    
+    void mouseMove(const juce::MouseEvent& e) override{
+        std::cout << "dbg";
+    }
+    
+    void mouseDoubleClick(const juce::MouseEvent & e) override{
+        std::cout << "mouse dubble clicked" <<std::endl;
+    }
 private:
     juce::ComponentBoundsConstrainer constrainer;
     juce::ComponentDragger dragger;
@@ -1788,8 +1903,284 @@ private:
     juce::Point<float> startPoint;
     juce::Point<float> endPoint;
     juce::OwnedArray<juce::Point<float>> linePoints;
+    juce::OwnedArray<juce::OwnedArray<juce::Line<float>>> linesArray;
     bool isDragging = false;
+    juce::OwnedArray<juce::Path> wires;
+    int portPoints[4] = {20, 80, 120, 180};
+    bool isDrawingWire = false;
     
+};
+
+class RNodeNew : public juce::Component
+{
+public:
+    RNodeNew(){
+//        wires.add(new juce::Path());
+//        wires.getLast()->startNewSubPath(19,20);
+//        wires.getLast()->lineTo(100,20);
+        collums = 2;
+        rows = 2;
+        setSize(200,200);
+        
+        gridSize = (getHeight()-2*borderOffset)/(rows*2-1);
+        //North
+        for(auto i=0; i<collums*2 ; i++){
+            portConnectionPoints.add(new juce::Point<float>(getXGrid(borderOffset+i*gridSize),0));
+        }
+        //East
+        for(auto i=0; i<rows*2 ; i++){
+            portConnectionPoints.add(new juce::Point<float>(getWidth(),getYGrid(borderOffset+i*gridSize)));
+        }
+        //South
+        for(auto i=0; i<collums*2 ; i++){
+            portConnectionPoints.add(new juce::Point<float>(getXGrid(borderOffset+(collums*2-1-i)*gridSize),getHeight()));
+        }
+        //West
+        for(auto i=0; i<rows*2 ; i++){
+            portConnectionPoints.add(new juce::Point<float>(0,getYGrid(borderOffset+(rows*2-1-i)*gridSize)));
+        }
+        
+        for(auto p: portConnectionPoints){
+            std::cout << " point x : " << p->getX() << " y : " <<p->getY() << std::endl;
+        }
+        
+        //Create stamp indexes (4 sides)
+        for(auto i=0; i<(collums*2)*4 ; i++){
+            resistorStampIndexes.push_back(-1);
+            voltageSourceStampIndexes.push_back(-1);
+        }
+        
+        addAndMakeVisible(&printIndexButton);
+        printIndexButton.setBounds(30,30,10,10);
+        printIndexButton.onClick = [this](){
+            for(auto i=0; i<resistorStampIndexes.size()/2; i++){
+                std::cout << "R" << i << " i:" << resistorStampIndexes[i*2] << " j:" << resistorStampIndexes[i*2+1] << std::endl;
+            }
+        };
+    
+    }
+    
+    void paint (juce::Graphics& g) override{
+        auto area = getLocalBounds().reduced (2);
+
+        g.setColour (juce::Colours::orange);
+        g.drawRoundedRectangle (area.toFloat(), 10.0f, 2.0f);
+
+        g.setColour (findColour (juce::TextButton::textColourOffId));
+        g.drawFittedText ("R", area, juce::Justification::centred, 1);
+        
+        for(auto p: portConnectionPoints){
+            g.drawEllipse(p->getX()-2, p->getY()-2, 4, 4, 3);
+        }
+        
+        g.setColour(juce::Colours::black);
+        
+        if(isDrawingWire){
+            g.drawLine(juce::Line<float>(startPoint,endPoint),2);
+        }
+        
+        for(auto w: wires){
+            g.strokePath(*w, juce::PathStrokeType(2));
+        }
+        
+        for(auto p: interconnectionPoints){
+            g.drawEllipse(p->getX()-2, p->getY()-2, 4, 4, 3);
+        }
+        
+    }
+    void resized() override{
+        constrainer.setMinimumOnscreenAmounts (getHeight(), getWidth(),
+        getHeight(), getWidth());
+    }
+    
+    void mouseDown(const juce::MouseEvent& e) override{
+        if(e.mods.isCommandDown()){
+            dragger.startDraggingComponent (this, e);
+            isDragging = true;
+        }
+        else{
+            auto x = getXGrid(e.getPosition().getX());
+            auto y = getYGrid(e.getPosition().getY());
+            if(isDrawingWire){
+                //Check if it can connect to another wire
+                for(auto w : wires){
+                    if(w->intersectsLine(juce::Line<float>(x-1,y-1,x+1,y+1),0)){
+                        wires.getLast()->addLineSegment(juce::Line<float>(startPoint, endPoint),0);
+                        interconnectionPoints.add(new juce::Point<float>(x,y));
+                        isDrawingWire = false;
+                        //Add component stamp index of start startOfWire
+                        
+                        //Get index of startPoint
+                        
+                        if((portConnectionPoints.indexOf(lastStartPoint) % 2) != 0){ // Add resistor stamp
+                            std::cout << "point index is : " << portConnectionPoints.indexOf(lastStartPoint) << std::endl;
+                            std::cout << "F1 : component connected to node : " << wireNodeIndexes[wires.indexOf(w)] << std::endl;
+                            resistorStampIndexes[portConnectionPoints.indexOf(lastStartPoint)] = wireNodeIndexes[wires.indexOf(w)];
+                        }
+                        else { // Add voltage source stamp
+                            voltageSourceStampIndexes[portConnectionPoints.indexOf(lastStartPoint)] = wireNodeIndexes[wires.indexOf(w)];
+                        }
+                        wireNodeIndexes.push_back(wireNodeIndexes[wires.indexOf(w)]);
+                        return;
+                    }
+                }
+                //Check if connected to other port
+                if(x == 0 || x == getWidth() || y==0 || y == getHeight()){
+                    for(auto p: portConnectionPoints){
+                        if(p->getX() == x && p->getY() == y){
+                            wires.getLast()->addLineSegment(juce::Line<float>(startPoint, endPoint),0);
+                            isDrawingWire = false;
+                            //Add component stamp index (new) of startOfWire and endPoint
+                            if((portConnectionPoints.indexOf(p) % 2) != 0){ // Add resistor stamp
+                                std::cout << "F2 : component connected to node : " << numberOfNodes << std::endl;
+                                resistorStampIndexes[portConnectionPoints.indexOf(p)] = numberOfNodes;
+                            }
+                            else { // Add voltage source stamp
+                                voltageSourceStampIndexes[portConnectionPoints.indexOf(p)] = numberOfNodes;
+                            }
+                            wireNodeIndexes.push_back(numberOfNodes);
+                            numberOfNodes++;
+                            return;
+                        }
+                    }
+                }
+                else{ // Make wire longer
+                    wires.getLast()->addLineSegment(juce::Line<float>(startPoint, endPoint),0);
+                    startPoint.setXY(x,y);
+                    endPoint.setXY(x,y);
+                    return;
+                }
+            }
+            else{
+                //Check if one of the ports
+                if(x == 0 || x == getWidth() || y==0 || y == getHeight()){
+                    for(auto p: portConnectionPoints){
+                        if(p->getX() == x && p->getY() == y){
+                            isDrawingWire = true;
+                            startPoint.setXY(x,y);
+                            lastStartPoint = p;
+                            endPoint.setXY(x,y);
+                            wires.add(new juce::Path());
+                            startOfWire.setXY(x,y);
+                            
+                            //Check if even -> (-) Uneven -> (+)
+                            if((portConnectionPoints.indexOf(p) % 2) != 0){ // Add resistor stamp
+                                resistorStampIndexes[portConnectionPoints.indexOf(p)] = numberOfNodes;
+                            }
+                            else { // Add voltage source stamp
+                                voltageSourceStampIndexes[portConnectionPoints.indexOf(p)] = numberOfNodes;
+                            }
+                        }
+                    }
+                }
+            }
+            
+        }
+    }
+    
+    void mouseDrag(const juce::MouseEvent& e) override{
+        if(isDragging){
+            dragger.dragComponent (this, e, &constrainer);
+        }
+    }
+    void mouseUp(const juce::MouseEvent& e) override{
+        isDragging = false;
+        repaint();
+    }
+    
+    void mouseMove(const juce::MouseEvent& e) override{
+        if(isDrawingWire){
+            auto x = getXGrid(e.getPosition().getX());
+            auto y = getYGrid(e.getPosition().getY());
+            endPoint.setXY(x,y);
+            repaint();
+        }
+    }
+    
+    void mouseDoubleClick(const juce::MouseEvent & e) override{
+        
+    }
+    
+    int getXGrid(int x){
+        gridSize = (getWidth()-2*borderOffset)/(collums*2-1);
+        //Check limits
+        if(x<=borderOffset){
+            if(x<borderOffset/2){
+                x = 0;
+            }
+            else x = borderOffset;
+        }
+        // - 1 for roundoff
+        else if(x>= getWidth() - borderOffset - 1){
+            if(x>getWidth() - borderOffset/2){
+                x = getWidth();
+            }
+            else{
+                x = getWidth() - borderOffset;
+            }
+        }
+        else if((x-borderOffset) % gridSize <= gridSize/2){
+            x -= ((x-borderOffset) % gridSize);
+        }
+        else{
+            x = x - ((x-borderOffset) % gridSize) + gridSize;
+            // Check for round off fault
+            if(x >= (getWidth() - borderOffset - 1)){
+                x = getWidth() - borderOffset;
+            }
+            
+        }
+        return x;
+    }
+    
+    int getYGrid(int y){
+        gridSize = (getHeight()-2*borderOffset)/(rows*2-1);
+        //Check limits
+        if(y<=borderOffset){
+            if(y<borderOffset/2){
+                y = 0;
+            }
+            else y = borderOffset;
+        }
+        else if(y>= getHeight() - borderOffset - 1){
+            if(y>getHeight() - borderOffset/2){
+                y = getHeight();
+            }
+            else y = getHeight() - borderOffset;
+        }
+        else if((y-borderOffset) % gridSize <= gridSize/2){
+            y -= ((y-borderOffset) % gridSize);
+        }
+        else{
+            y = y - ((y-borderOffset) % gridSize) + gridSize;
+            // Check for round off fault
+            if(y >= (getHeight() - borderOffset - 1)){
+                y = getHeight() - borderOffset;
+            }
+        }
+        return y;
+    }
+private:
+    juce::ComponentBoundsConstrainer constrainer;
+    juce::ComponentDragger dragger;
+    juce::OwnedArray<juce::Path> wires;
+    juce::Point<float> startPoint;
+    juce::Point<float> endPoint;
+    juce::Point<float> startOfWire;
+    juce::Point<float> * lastStartPoint;
+    juce::OwnedArray<juce::Point<float>> interconnectionPoints;
+    bool isDrawingWire = false;
+    bool isDragging = false;
+    int collums;
+    int rows;
+    int borderOffset = 20;
+    int gridSize;
+    juce::OwnedArray<juce::Point<float>> portConnectionPoints;
+    std::vector<int> resistorStampIndexes;
+    std::vector<int> voltageSourceStampIndexes;
+    std::vector<int> wireNodeIndexes;
+    int numberOfNodes = 0;
+    juce::TextButton printIndexButton;
 };
 
 
@@ -1950,6 +2341,8 @@ public:
     void mouseDown(const juce::MouseEvent& e) override{
            std::cout << "mouse down was called" << std::endl;
        }
+    
+    
     
 private:
     juce::Label l1;
@@ -2196,6 +2589,7 @@ private:
     Resistor_ circuitComponent{};
     std::unique_ptr<SimpleRootComponent> simpleRoot;
     std::unique_ptr<RNode_> rNode;
+    std::unique_ptr<RNodeNew> rnode;
     
     juce::AudioFormatManager formatManager;
     juce::AudioSampleBuffer buffer_in;

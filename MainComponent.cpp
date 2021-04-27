@@ -181,6 +181,7 @@ MainComponent::MainComponent()
     componentSelector.addItem("Resistive Voltage Source",9);
     componentSelector.addItem("Short Circuit",10);
     componentSelector.addItem("-",11);
+    componentSelector.addItem("Old R Node", 12);
     addAndMakeVisible(componentSelector);
     
     componentSelector.onChange = [this](){
@@ -253,6 +254,11 @@ MainComponent::MainComponent()
                 simpleRoot->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
                 break;
             case 11:
+                break;
+            case 12:
+                rnode = std::make_unique<RNodeNew>();
+                schematic.addAndMakeVisible(rnode.get());
+                rnode->setBounds(100,100,200,200);
                 break;
         }
     };
