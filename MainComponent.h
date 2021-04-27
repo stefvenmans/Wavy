@@ -115,7 +115,7 @@ public:
         getHeight(), getWidth());
     }
     
-    void mouseDown(const juce::MouseEvent& e) override
+    virtual void mouseDown(const juce::MouseEvent& e) override
     {
         lastX = getX();
         lastY = getY();
@@ -149,7 +149,7 @@ public:
                 c = false;
             }
             // get all child components and diconnect them
-            std::cout << "disconnect all" << std::endl;
+            //std::cout << "disconnect all" << std::endl;
             repaint();
         }
         
@@ -935,31 +935,118 @@ class RNode_ : public CircuitComponent
 {
 public:
     RNode_() : CircuitComponent(""){
-        portOrientations.push_back(0);
-        portOrientations.push_back(0);
-        portOrientations.push_back(2);
-        portOrientations.push_back(2);
-        portOrientations.push_back(3);
-        portOrientations.push_back(3);
-        isConnected.push_back(false);
-        isConnected.push_back(false);
-        isConnected.push_back(false);
-        isConnected.push_back(false);
-        isConnected.push_back(false);
-        isConnected.push_back(false);
-        
-        //childs.reserve(6);
-        childs.push_back(nullptr);
-        childs.push_back(nullptr);
-        childs.push_back(nullptr);
-        childs.push_back(nullptr);
-        childs.push_back(nullptr);
-        childs.push_back(nullptr);
         
         collumsX = 2;
-        rowsY = 2;
+        rowsY = 1;
+        collums = 2;
+        rows = 1;
+        setSize(collums*100,rows*100);
         
-        childsA = new AdaptedLeafComponent*[6];
+        //North
+        for(auto i=0; i<collums; i++){
+            portOrientations.push_back(0);
+            isConnected.push_back(false);
+            childs.push_back(nullptr);
+        }
+        //East
+        for(auto i=0; i<rows; i++){
+            portOrientations.push_back(1);
+            isConnected.push_back(false);
+            childs.push_back(nullptr);
+        }
+        //South
+        for(auto i=0; i<collums; i++){
+            portOrientations.push_back(2);
+            isConnected.push_back(false);
+            childs.push_back(nullptr);
+        }
+        //West
+        for(auto i=0; i<rows; i++){
+            portOrientations.push_back(3);
+            isConnected.push_back(false);
+            childs.push_back(nullptr);
+        }
+        
+//        portOrientations.push_back(0);
+//        portOrientations.push_back(0);
+//        portOrientations.push_back(2);
+//        portOrientations.push_back(2);
+//        portOrientations.push_back(3);
+//        portOrientations.push_back(3);
+//        isConnected.push_back(false);
+//        isConnected.push_back(false);
+//        isConnected.push_back(false);
+//        isConnected.push_back(false);
+//        isConnected.push_back(false);
+//        isConnected.push_back(false);
+        
+        //childs.reserve(6);
+//        childs.push_back(nullptr);
+//        childs.push_back(nullptr);
+//        childs.push_back(nullptr);
+//        childs.push_back(nullptr);
+//        childs.push_back(nullptr);
+//        childs.push_back(nullptr);
+        
+        childsA = new AdaptedLeafComponent*[(collums+rows)*2];
+        
+        gridSize = (getHeight()-2*borderOffset)/(rows*2-1);
+        //North
+        for(auto i=0; i<collums*2 ; i++){
+            gridSize = (getWidth()-2*borderOffset)/(collums*2-1);
+            portConnectionPoints.add(new juce::Point<float>(getXGrid(borderOffset+i*gridSize),11));
+        }
+        //East
+        for(auto i=0; i<rows*2 ; i++){
+            gridSize = (getHeight()-2*borderOffset)/(rows*2-1);
+            portConnectionPoints.add(new juce::Point<float>(getWidth()-11,getYGrid(borderOffset+i*gridSize)));
+        }
+        //South
+        for(auto i=0; i<collums*2 ; i++){
+            gridSize = (getWidth()-2*borderOffset)/(collums*2-1);
+            std::cout << " ! " << borderOffset+(collums*2-1-i)*gridSize << std::endl;
+            portConnectionPoints.add(new juce::Point<float>(getXGrid(borderOffset+(collums*2-1-i)*gridSize),getHeight()-11));
+        }
+        //West
+        for(auto i=0; i<rows*2 ; i++){
+            gridSize = (getHeight()-2*borderOffset)/(rows*2-1);
+            portConnectionPoints.add(new juce::Point<float>(11,getYGrid(borderOffset+(rows*2-1-i)*gridSize)));
+        }
+        
+        //Create stamp indexes (4 sides) -> -1 for not connected
+        for(auto i=0; i<((collums+rows)*2)*2 ; i++){
+            resistorStampIndexes.push_back(-1);
+            voltageSourceStampIndexes.push_back(-1);
+        }
+        
+        for(auto p: portConnectionPoints){
+            std::cout << "p :   " << p->getX() << "-" << p->getY() << std::endl;
+        }
+        
+        addAndMakeVisible(&printIndexButton);
+        printIndexButton.setBounds(30,30,10,10);
+        printIndexButton.onClick = [this](){
+            
+            if(wireNodeIndexes.size() == 0) return;
+            auto nInR = *(std::max_element(wireNodeIndexes.begin(),wireNodeIndexes.end())) + 1;
+            //Add outside node indexes to stamps
+            for(auto i=0; i<resistorStampIndexes.size()/2; i++){
+                resistorStampIndexes[i*2] = i+nInR;
+                voltageSourceStampIndexes[i*2+1] = i+nInR;
+            }
+            
+            
+            for(auto i=0; i<resistorStampIndexes.size()/2; i++){
+                std::cout << "R" << i << " j:" << resistorStampIndexes[i*2] << " i:" << resistorStampIndexes[i*2+1] << "    V" << i << " j:" << voltageSourceStampIndexes[i*2] << " i:" << voltageSourceStampIndexes[i*2+1] << std::endl;
+                
+            }
+            
+            std::cout << getChildsWDFTreeNodes().size() << std::endl;
+            calculateScatteringMatrix();
+        };
+    
+        
+        
     }
     
     void paint (juce::Graphics& g) override
@@ -971,18 +1058,32 @@ public:
             rotate = false;
         }
         
-        //this->setTransform(getTransform().rotated(angle, getWidth()/2, getHeight()/2));
-        ///g.setFont(juce::Font("Lucida Calligraphy",60.0f,2));
-        g.setFont(juce::Font("Lucida Handwriting",60.0f,2));
-        g.drawText ("R", getWidth()/2-30, getHeight()/2-30, 60, 60, juce::Justification::centred);
+        if(nodeDrawView){
+            g.setColour(juce::Colours::black);
+            for(auto p: portConnectionPoints){
+                g.drawEllipse(p->getX()-2, p->getY()-2, 4, 4, 4);
+            }
+            
+            if(isDrawingWire){
+                g.drawLine(juce::Line<float>(startPoint,endPoint),2);
+            }
+            
+            for(auto w: wires){
+                g.strokePath(*w, juce::PathStrokeType(2));
+            }
+            
+            for(auto p: interconnectionPoints){
+                g.drawEllipse(p->getX()-2, p->getY()-2, 4, 4, 3);
+            }
+        }
+        else{
+            g.setFont(juce::Font("Lucida Handwriting",60.0f,2));
+            g.drawText ("R", getWidth()/2-30, getHeight()/2-30, 60, 60, juce::Justification::centred);
+        }
         
-        //auto rec = juce::Rectangle<float>(getWidth()/2-30, getHeight()/2-30, 60, 60);
         
-        //rec.transformedBy(getTransform().rotated(angle, getWidth()/2, getHeight()/2));
-        
-        //g.drawText ("text", rec, juce::Justification::centred);
         g.setColour(juce::Colours::black);
-        g.drawRect(10,10,180,180,2);
+        g.drawRect(10,10,collums*100-20,rows*100-20,2);
     }
     
     void connect(CircuitComponent* c) override {
@@ -1010,7 +1111,8 @@ public:
                         if(getX() + getWidth() == c->getX() && c->getY() == getY() + i*(getHeight()/rowsY) && c->hasOrientation(3)){
                             std::cout << "circuit will be able to connect to this side : " << o << "with index : " << i << std::endl;
                             connectSuccesfull = true;
-                            //childs.insert(childs.begin()+i + 2,c);
+                            childs.insert(childs.begin()+i + collums,(AdaptedLeafComponent*)c);
+                            childsA[i+collums] = (AdaptedLeafComponent*)c;
                             return;
                         }
                     }
@@ -1021,8 +1123,9 @@ public:
                         if(getY() + getHeight() == c->getY() && c->getX() == getX() + i*(getWidth()/collumsX) && c->hasOrientation(0)){
                             std::cout << "circuit will be able to connect to this side : " << o << "with index : " << i + 2 << std::endl;
                             connectSuccesfull = true;
-                            childs.insert(childs.begin()+i + 2,(AdaptedLeafComponent*)c);
-                            childsA[i + 2] = (AdaptedLeafComponent*)c;
+                            childs.insert(childs.begin()+ collums+rows +(collums-i-1),(AdaptedLeafComponent*)c);
+                            //childsA[i + collums+rows] = (AdaptedLeafComponent*)c;
+                            childsA[collums+rows +(collums-i-1)] = (AdaptedLeafComponent*)c;
                             return;
                         }
                     }
@@ -1033,8 +1136,9 @@ public:
                         if(c->getX() + c->getWidth() == getX() && c->getY() == getY() + i*(getHeight()/rowsY) && c->hasOrientation(1)){
                             std::cout << "circuit will be able to connect to this side : " << o << "with index : " << i + 4 << std::endl;
                             connectSuccesfull = true;
-                            childs.insert(childs.begin()+i + 4,(AdaptedLeafComponent*)c);
-                            childsA[i + 4] = (AdaptedLeafComponent*)c;
+                            childs.insert(childs.begin()+i + collums*2+rows,(AdaptedLeafComponent*)c);
+                            //childsA[i + collums*2+rows] = (AdaptedLeafComponent*)c;
+                            childsA[collums*2+rows +(rows-i-1)] = (AdaptedLeafComponent*)c;
                             return;
                         }
                     }
@@ -1077,16 +1181,284 @@ public:
     
     std::vector<wdfTreeNode*> getChildsWDFTreeNodes (){
         std::vector<wdfTreeNode*> childsWDFTreeNodes;
-        for(auto i=0; i<6; i++){
+        for(auto i=0; i<(collums+rows)*2; i++){
             childsWDFTreeNodes.push_back(childsA[i]->createWDFComponent());
         }
         return childsWDFTreeNodes;
     }
+    
+    void mouseDoubleClick(const juce::MouseEvent & e) override{
+        nodeDrawView = !nodeDrawView;
+        repaint();
+    }
+    
+    void mouseDown(const juce::MouseEvent &e) override{
+        if(nodeDrawView != true){
+            isDragging = true;
+            this->CircuitComponent::mouseDown(e);
+        }
+        else{
+            auto x = getXGrid(e.getPosition().getX());
+            auto y = getYGrid(e.getPosition().getY());
+            if(isDrawingWire){
+                //Check if it can connect to another wire
+                for(auto w : wires){
+                    if(w->intersectsLine(juce::Line<float>(x-1,y-1,x+1,y+1),0)){
+                        wires.getLast()->addLineSegment(juce::Line<float>(startPoint, endPoint),0);
+                        interconnectionPoints.add(new juce::Point<float>(x,y));
+                        isDrawingWire = false;
+                        //Add component stamp index of start startOfWire
+                        
+                        //Get index of startPoint
+                        
+                        if((portConnectionPoints.indexOf(lastStartPoint) % 2) != 0){ // Add resistor stamp
+                            resistorStampIndexes[portConnectionPoints.indexOf(lastStartPoint)] = wireNodeIndexes[wires.indexOf(w)];
+                        }
+                        else { // Add voltage source stamp
+                            voltageSourceStampIndexes[portConnectionPoints.indexOf(lastStartPoint)] = wireNodeIndexes[wires.indexOf(w)];
+                        }
+                        wireNodeIndexes.push_back(wireNodeIndexes[wires.indexOf(w)]);
+                        return;
+                    }
+                }
+                //Check if connected to other port
+                if(x == 11 || x == getWidth() -11 || y==11 || y == getHeight()-11){
+                    for(auto p: portConnectionPoints){
+                        if(p->getX() == x && p->getY() == y){
+                            wires.getLast()->addLineSegment(juce::Line<float>(startPoint, endPoint),0);
+                            isDrawingWire = false;
+                            //Add component stamp index (new) of startOfWire and endPoint
+                            if((portConnectionPoints.indexOf(p) % 2) != 0){ // Add resistor stamp
+                                resistorStampIndexes[portConnectionPoints.indexOf(p)] = numberOfNodes;
+                            }
+                            else { // Add voltage source stamp
+                                voltageSourceStampIndexes[portConnectionPoints.indexOf(p)] = numberOfNodes;
+                            }
+                            wireNodeIndexes.push_back(numberOfNodes);
+                            numberOfNodes++;
+                            return;
+                        }
+                    }
+                }
+                else{ // Make wire longer
+                    wires.getLast()->addLineSegment(juce::Line<float>(startPoint, endPoint),0);
+                    startPoint.setXY(x,y);
+                    endPoint.setXY(x,y);
+                    return;
+                }
+            }
+            else{
+                //Check if one of the ports
+                if(x == 11 || x == getWidth()-11 || y==11 || y == getHeight()-11){
+                    for(auto p: portConnectionPoints){
+                        if(p->getX() == x && p->getY() == y){
+                            isDrawingWire = true;
+                            startPoint.setXY(x,y);
+                            lastStartPoint = p;
+                            endPoint.setXY(x,y);
+                            wires.add(new juce::Path());
+                            startOfWire.setXY(x,y);
+                            
+                            //Check if even -> (-) Uneven -> (+)
+                            if((portConnectionPoints.indexOf(p) % 2) != 0){ // Add resistor stamp
+                                resistorStampIndexes[portConnectionPoints.indexOf(p)] = numberOfNodes;
+                            }
+                            else { // Add voltage source stamp
+                                voltageSourceStampIndexes[portConnectionPoints.indexOf(p)] = numberOfNodes;
+                            }
+                        }
+                    }
+                }
+            }
+            
+        }
+    }
+    
+    void mouseDrag(const juce::MouseEvent& e) override{
+        if(isDragging){
+            this->CircuitComponent::mouseDrag(e);
+        }
+    }
+    void mouseUp(const juce::MouseEvent& e) override{
+        if(isDragging){
+            this->CircuitComponent::mouseUp(e);
+            isDragging = false;
+        }
+            
+        repaint();
+    }
+    
+    void mouseMove(const juce::MouseEvent& e) override{
+        if(isDrawingWire){
+            auto x = getXGrid(e.getPosition().getX());
+            auto y = getYGrid(e.getPosition().getY());
+            endPoint.setXY(x,y);
+            repaint();
+        }
+    }
+    
+    int getXGrid(int x){
+        gridSize = (getWidth()-2*borderOffset)/(collums*2-1);
+        //Check limits
+        if(x<=borderOffset){
+            if(x<borderOffset/2){
+                x = xyOff;
+            }
+            else x = borderOffset;
+        }
+        // - 1 for roundoff
+        else if(x>= getWidth() - borderOffset - 1){
+            if(x>getWidth() - borderOffset/2){
+                x = getWidth()-xyOff;
+            }
+            else{
+                x = getWidth() - borderOffset;
+            }
+        }
+        else if((x-borderOffset) % gridSize <= gridSize/2){
+            x -= ((x-borderOffset) % gridSize);
+        }
+        else{
+            x = x - ((x-borderOffset) % gridSize) + gridSize;
+            // Check for round off fault
+            if(x >= (getWidth() - borderOffset - 1)){
+                x = getWidth() - borderOffset;
+            }
+            
+        }
+        return x;
+    }
+    
+    int getYGrid(int y){
+        gridSize = (getHeight()-2*borderOffset)/(rows*2-1);
+        //Check limits
+        if(y<=borderOffset){
+            if(y<borderOffset/2){
+                y = xyOff;
+            }
+            else y = borderOffset;
+        }
+        else if(y>= getHeight() - borderOffset - 1){
+            if(y>getHeight() - borderOffset/2){
+                y = getHeight()-xyOff;
+            }
+            else y = getHeight() - borderOffset;
+        }
+        else if((y-borderOffset) % gridSize <= gridSize/2){
+            y -= ((y-borderOffset) % gridSize);
+        }
+        else{
+            y = y - ((y-borderOffset) % gridSize) + gridSize;
+            // Check for round off fault
+            if(y >= (getHeight() - borderOffset - 1)){
+                y = getHeight() - borderOffset;
+            }
+        }
+        return y;
+    }
+    
+    mat calculateScatteringMatrix(){
+        if(wireNodeIndexes.size() == 0) return nullptr;
+        
+        auto n = (collums+rows)*2;
+        auto nInR = *(std::max_element(wireNodeIndexes.begin(),wireNodeIndexes.end())) + 1;
+        auto nTotal = n + nInR;
+        
+        for(auto i=0; i<resistorStampIndexes.size()/2; i++){
+            resistorStampIndexes[i*2] = i+nInR;
+            voltageSourceStampIndexes[i*2+1] = i+nInR;
+        }
+        
+        double R_val[n];
+        double G_val[n];
+        
+        auto wdfChildComp = getChildsWDFTreeNodes();
+        
+        for(auto i=0; i<n; i++){
+            R_val[i] = wdfChildComp[i]->calculateUpRes(1.0/44100.0);
+            G_val[i] = 1/(wdfChildComp[i]->calculateUpRes(1.0/44100.0));
+        }
+        
+        mat I = eye(n, n);
+        mat R(n,n,fill::zeros);
+        for ( unsigned int ii = 0; ii < n; ++ii ) {
+                R.at(ii, ii) = R_val[ii];
+            }
+        mat Z1(n,n+nInR-1,fill::zeros);
+        Z1 = join_rows(Z1,I);
+        mat Z2 = trans(Z1);
+        
+        
+        mat Y(nTotal,nTotal,fill::zeros);
+        mat A(nTotal,n,fill::zeros);
+        mat B(n,nTotal,fill::zeros);
+        mat D(n,n,fill::zeros);
+        
+        //resistor stamp index j - i
+        //j = resistorStampIndexes[i*2]
+        //i = resistorStampIndexes[i*2+1]
+        
+        for(auto i=0; i<n; i++){
+            //Resistor stamps
+            Y.at(resistorStampIndexes[i*2+1],resistorStampIndexes[i*2+1]) = Y.at(resistorStampIndexes[i*2+1],resistorStampIndexes[i*2+1]) + G_val[i];
+            Y.at(resistorStampIndexes[i*2+1],resistorStampIndexes[i*2]) = Y.at(resistorStampIndexes[i*2+1],resistorStampIndexes[i*2]) - G_val[i];
+            Y.at(resistorStampIndexes[i*2],resistorStampIndexes[i*2+1]) = Y.at(resistorStampIndexes[i*2],resistorStampIndexes[i*2+1]) - G_val[i];
+            Y.at(resistorStampIndexes[i*2],resistorStampIndexes[i*2]) = Y.at(resistorStampIndexes[i*2],resistorStampIndexes[i*2]) + G_val[i];
+            
+            //VolSource stamps
+            A.at(voltageSourceStampIndexes[i*2+1],i) = A.at(voltageSourceStampIndexes[i*2+1],i) + 1;
+            A.at(voltageSourceStampIndexes[i*2],i) = A.at(voltageSourceStampIndexes[i*2],i) - 1;
+            B.at(i,voltageSourceStampIndexes[i*2+1]) = B.at(i,voltageSourceStampIndexes[i*2+1]) + 1;
+            B.at(i,voltageSourceStampIndexes[i*2]) = B.at(i,voltageSourceStampIndexes[i*2]) - 1;
+        }
+        Y.print();
+        A.print();
+        B.print();
+        
+        mat X1 = join_rows(Y,A);
+        mat X2 = join_rows(B,D);
+        mat X = join_cols(X1, X2);
+        
+        X.print();
+        
+        X = X.submat(1, 1, nTotal+n-1, nTotal+n-1);
+        
+        X.print();
+        
+        mat S = I + 2*R*Z1*inv(X)*Z2*I;
+        S.print();
+        Smat = S;
+        return S;
+    }
+    
 private:
     std::vector<AdaptedLeafComponent*> childs;
     AdaptedLeafComponent** childsA;
     int rowsY;
     int collumsX;
+    bool nodeDrawView = false;
+    
+    juce::OwnedArray<juce::Path> wires;
+    juce::Point<float> startPoint;
+    juce::Point<float> endPoint;
+    juce::Point<float> startOfWire;
+    juce::Point<float> * lastStartPoint;
+    juce::OwnedArray<juce::Point<float>> interconnectionPoints;
+    bool isDrawingWire = false;
+    bool isDragging = false;
+    int collums;
+    int rows;
+    int borderOffset = 32;
+    int gridSize;
+    juce::OwnedArray<juce::Point<float>> portConnectionPoints;
+    std::vector<int> resistorStampIndexes;
+    std::vector<int> voltageSourceStampIndexes;
+    std::vector<int> wireNodeIndexes;
+    int numberOfNodes = 0;
+    juce::TextButton printIndexButton;
+    mat Smat;
+    int xyOff = 11;
+    
     
 };
 
@@ -2644,6 +3016,7 @@ private:
     juce::ComboBox componentSelector;
     juce::TextButton showLibraryButton;
     juce::TextButton calculateMatButton;
+    juce::TextButton calculateRaw;
     
     juce::Viewport viewPort;
     //juce::BlockField blockField;

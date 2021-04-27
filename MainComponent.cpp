@@ -122,7 +122,9 @@ MainComponent::MainComponent()
 //                    }
 //
 //                }
-            wdfEnvironment.setSMat(Smat);
+            //wdfEnvironment.setSMat(Smat);
+            wdfEnvironment.setSMat(rNode->calculateScatteringMatrix());
+            
             wdfEnvironment.setSubtreeEntryNodes(rNode->getChildsWDFTreeNodes());
         }
 
@@ -237,7 +239,7 @@ MainComponent::MainComponent()
             case 8:
                 rNode = std::make_unique<RNode_>();
                 schematic.addAndMakeVisible(rNode.get());
-                rNode->setBounds(20, 20, 200 , 200);
+                rNode->setCentrePosition(200, 200);
                 rNode->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
                 break;
             case 9:
@@ -286,6 +288,34 @@ MainComponent::MainComponent()
     sidePanel.setShadowWidth(0);
     setSize (820, 580);
     sidePanel.showOrHide(false);
+    
+    addAndMakeVisible(calculateRaw);
+    calculateRaw.onClick = [this] () {
+        if(simpleRoot != nullptr || rNode != nullptr){
+            if(simpleRoot != nullptr){
+                    wdfEnvironment.setSubtreeEntryNodes(simpleRoot->getChildComponent()->createWDFComponent());
+                    wdfEnvironment.setRoot(simpleRoot->createWDFComponent());
+                    wdfEnvironment.initTree();
+                    wdfEnvironment.adaptTree();
+                }
+            else if(rNode != nullptr){
+                auto sMatrix = rNode->calculateScatteringMatrix();
+                wdfEnvironment.setSMat(sMatrix);
+                wdfEnvironment.setSubtreeEntryNodes(rNode->getChildsWDFTreeNodes());
+                wdfEnvironment.initTree();
+                wdfEnvironment.adaptTree();
+                }
+            
+            
+            for(auto i=0; i<500; i++){
+                wdfEnvironment.cycleWave();
+                if(outputIndex != -1 && outputIndex < leafComponents.size()){
+                    std::cout << -leafComponents[outputIndex]->getWDFComponent()->upPort->getPortVoltage() << std::endl;
+                }
+                else std::cout << "No output set!" << std::endl;
+            }
+        }
+    };
 
     // Some platforms require permissions to open input channels so request that here
     if (juce::RuntimePermissions::isRequired (juce::RuntimePermissions::recordAudio)
@@ -487,6 +517,7 @@ void MainComponent::resized()
     //res1Slider.setBounds(680,40,80,200);
     componentSelector.setBounds(getWidth()-200,40+80,100,30);
     calculateMatButton.setBounds(getWidth()-200,40*2+80+60,50,50);
+    calculateRaw.setBounds(getWidth()-200, 40*2+80+60+70, 50, 50);
     
 //    for (auto x = 0; x < numX; ++x)
 //        {
