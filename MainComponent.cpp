@@ -299,11 +299,17 @@ MainComponent::MainComponent()
                     wdfEnvironment.adaptTree();
                 }
             else if(rNode != nullptr){
-                auto sMatrix = rNode->calculateScatteringMatrix();
-                wdfEnvironment.setSMat(sMatrix);
+                //auto sMatrix = rNode->calculateScatteringMatrix();
                 wdfEnvironment.setSubtreeEntryNodes(rNode->getChildsWDFTreeNodes());
+                
+                //wdfEnvironment.adaptTree();
+                wdfEnvironment.getRNodeMatLambda = [this](double *Rp){
+                    return rNode->calculateScatteringMatrix(Rp);
+                };
+                
                 wdfEnvironment.initTree();
                 wdfEnvironment.adaptTree();
+                
                 }
             
             

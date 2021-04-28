@@ -26,6 +26,9 @@ public:
         
     }
     int setRootMatrData( matData* rootMatrixData, double *Rp ){
+        if(getRNodeMatLambda != nullptr){
+            Smat = getRNodeMatLambda(Rp);
+        }
         for ( unsigned int ii = 0; ii < Smat.n_cols; ++ii ) {
                 for ( unsigned int jj = 0; jj < Smat.n_rows; ++jj ) {
                     rootMatrixData->Smat.at(ii, jj) = Smat.at(ii,jj);
@@ -65,8 +68,10 @@ public:
     void setSMat(mat newSMat){
         Smat = newSMat;
     }
+    std::function<mat(double*)> getRNodeMatLambda;
 private:
     mat Smat;
+    
 };
 
 
@@ -936,9 +941,9 @@ class RNode_ : public CircuitComponent
 public:
     RNode_() : CircuitComponent(""){
         
-        collumsX = 2;
+        collumsX = 1;
         rowsY = 1;
-        collums = 2;
+        collums = 1;
         rows = 1;
         setSize(collums*100,rows*100);
         
@@ -966,27 +971,6 @@ public:
             isConnected.push_back(false);
             childs.push_back(nullptr);
         }
-        
-//        portOrientations.push_back(0);
-//        portOrientations.push_back(0);
-//        portOrientations.push_back(2);
-//        portOrientations.push_back(2);
-//        portOrientations.push_back(3);
-//        portOrientations.push_back(3);
-//        isConnected.push_back(false);
-//        isConnected.push_back(false);
-//        isConnected.push_back(false);
-//        isConnected.push_back(false);
-//        isConnected.push_back(false);
-//        isConnected.push_back(false);
-        
-        //childs.reserve(6);
-//        childs.push_back(nullptr);
-//        childs.push_back(nullptr);
-//        childs.push_back(nullptr);
-//        childs.push_back(nullptr);
-//        childs.push_back(nullptr);
-//        childs.push_back(nullptr);
         
         childsA = new AdaptedLeafComponent*[(collums+rows)*2];
         
@@ -1023,7 +1007,7 @@ public:
             std::cout << "p :   " << p->getX() << "-" << p->getY() << std::endl;
         }
         
-        addAndMakeVisible(&printIndexButton);
+        //addAndMakeVisible(&printIndexButton);
         printIndexButton.setBounds(30,30,10,10);
         printIndexButton.onClick = [this](){
             
@@ -1073,7 +1057,7 @@ public:
             }
             
             for(auto p: interconnectionPoints){
-                g.drawEllipse(p->getX()-2, p->getY()-2, 4, 4, 3);
+                g.drawEllipse(p->getX()-1, p->getY()-1, 2, 2, 2);
             }
         }
         else{
@@ -1269,6 +1253,10 @@ public:
                         }
                     }
                 }
+                
+                //Check if nullor k-l
+                
+                //Check if nullor i-j
             }
             
         }
@@ -1375,6 +1363,9 @@ public:
         auto wdfChildComp = getChildsWDFTreeNodes();
         
         for(auto i=0; i<n; i++){
+//            wdfChildComp[i]->setParentInChildren( );
+//            wdfChildComp[i]->createPorts( );
+//            wdfChildComp[i]->adaptPorts(1.0/44100.0);
             R_val[i] = wdfChildComp[i]->calculateUpRes(1.0/44100.0);
             G_val[i] = 1/(wdfChildComp[i]->calculateUpRes(1.0/44100.0));
         }
@@ -1431,6 +1422,87 @@ public:
         return S;
     }
     
+    mat calculateScatteringMatrix(double *Rp){
+            if(wireNodeIndexes.size() == 0) return nullptr;
+            
+            auto n = (collums+rows)*2;
+            auto nInR = *(std::max_element(wireNodeIndexes.begin(),wireNodeIndexes.end())) + 1;
+            auto nTotal = n + nInR;
+            
+            for(auto i=0; i<resistorStampIndexes.size()/2; i++){
+                resistorStampIndexes[i*2] = i+nInR;
+                voltageSourceStampIndexes[i*2+1] = i+nInR;
+            }
+            
+            double R_val[n];
+            double G_val[n];
+            
+            //auto wdfChildComp = getChildsWDFTreeNodes();
+            
+            for(auto i=0; i<n; i++){
+    //            wdfChildComp[i]->setParentInChildren( );
+    //            wdfChildComp[i]->createPorts( );
+    //            wdfChildComp[i]->adaptPorts(1.0/44100.0);
+                R_val[i] = Rp[i];
+                G_val[i] = 1/Rp[i];
+            }
+            
+            mat I = eye(n, n);
+            mat R(n,n,fill::zeros);
+            for ( unsigned int ii = 0; ii < n; ++ii ) {
+                    R.at(ii, ii) = R_val[ii];
+                }
+            mat Z1(n,n+nInR-1,fill::zeros);
+            Z1 = join_rows(Z1,I);
+            mat Z2 = trans(Z1);
+            
+            
+            mat Y(nTotal,nTotal,fill::zeros);
+            mat A(nTotal,n,fill::zeros);
+            mat B(n,nTotal,fill::zeros);
+            mat D(n,n,fill::zeros);
+            
+            //resistor stamp index j - i
+            //j = resistorStampIndexes[i*2]
+            //i = resistorStampIndexes[i*2+1]
+            
+            for(auto i=0; i<n; i++){
+                //Resistor stamps
+                Y.at(resistorStampIndexes[i*2+1],resistorStampIndexes[i*2+1]) = Y.at(resistorStampIndexes[i*2+1],resistorStampIndexes[i*2+1]) + G_val[i];
+                Y.at(resistorStampIndexes[i*2+1],resistorStampIndexes[i*2]) = Y.at(resistorStampIndexes[i*2+1],resistorStampIndexes[i*2]) - G_val[i];
+                Y.at(resistorStampIndexes[i*2],resistorStampIndexes[i*2+1]) = Y.at(resistorStampIndexes[i*2],resistorStampIndexes[i*2+1]) - G_val[i];
+                Y.at(resistorStampIndexes[i*2],resistorStampIndexes[i*2]) = Y.at(resistorStampIndexes[i*2],resistorStampIndexes[i*2]) + G_val[i];
+                
+                //VolSource stamps
+                A.at(voltageSourceStampIndexes[i*2+1],i) = A.at(voltageSourceStampIndexes[i*2+1],i) + 1;
+                A.at(voltageSourceStampIndexes[i*2],i) = A.at(voltageSourceStampIndexes[i*2],i) - 1;
+                B.at(i,voltageSourceStampIndexes[i*2+1]) = B.at(i,voltageSourceStampIndexes[i*2+1]) + 1;
+                B.at(i,voltageSourceStampIndexes[i*2]) = B.at(i,voltageSourceStampIndexes[i*2]) - 1;
+            }
+            Y.print();
+            A.print();
+            B.print();
+            
+            mat X1 = join_rows(Y,A);
+            mat X2 = join_rows(B,D);
+            mat X = join_cols(X1, X2);
+            
+            X.print();
+            
+            X = X.submat(1, 1, nTotal+n-1, nTotal+n-1);
+            
+            X.print();
+            
+            mat S = I + 2*R*Z1*inv(X)*Z2*I;
+            S.print();
+            Smat = S;
+            return S;
+        }
+    
+    void createNullorStamps(){
+        isCreatingNullor = true;
+    }
+    
 private:
     std::vector<AdaptedLeafComponent*> childs;
     AdaptedLeafComponent** childsA;
@@ -1453,11 +1525,13 @@ private:
     juce::OwnedArray<juce::Point<float>> portConnectionPoints;
     std::vector<int> resistorStampIndexes;
     std::vector<int> voltageSourceStampIndexes;
+    std::vector<int> nullorStampIndex;
     std::vector<int> wireNodeIndexes;
     int numberOfNodes = 0;
     juce::TextButton printIndexButton;
     mat Smat;
     int xyOff = 11;
+    bool isCreatingNullor = false;
     
     
 };
