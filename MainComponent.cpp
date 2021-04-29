@@ -313,14 +313,21 @@ MainComponent::MainComponent()
                 
                 }
             
-            
-            for(auto i=0; i<500; i++){
+            if(inputIndex != -1){
+                readAudio();
+                processAudio();
+                writeAudio();
+            }
+            else {
+                for(auto i=0; i<500; i++){
                 wdfEnvironment.cycleWave();
                 if(outputIndex != -1 && outputIndex < leafComponents.size()){
                     std::cout << -leafComponents[outputIndex]->getWDFComponent()->upPort->getPortVoltage() << std::endl;
                 }
                 else std::cout << "No output set!" << std::endl;
+                }
             }
+            
         }
     };
 
@@ -597,6 +604,7 @@ void MainComponent::writeAudio(){
     writer.reset(format.createWriterFor(new juce::FileOutputStream(file_out), 44100, buffer_out.getNumChannels(), 24, {}, 0));
     
     if(writer != nullptr){
+        std::cout << "audio file written" << std::endl;
         writer->writeFromAudioSampleBuffer(buffer_out, 0, buffer_out.getNumSamples());
     }
 }

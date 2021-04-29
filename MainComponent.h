@@ -1213,9 +1213,77 @@ public:
                     }
                     return;
                 }
-                    
-                
             }
+            
+            //Check if unconnected node
+            if(x == 11 || x == getWidth() -11 || y==11 || y == getHeight()-11){
+                for(auto p: portConnectionPoints){
+                    if(p->getX() == x && p->getY() == y){
+                        if((portConnectionPoints.indexOf(p) % 2) != 0){ // Add resistor stamp
+                            if(resistorStampIndexes[portConnectionPoints.indexOf(p)] == -1){
+                                resistorStampIndexes[portConnectionPoints.indexOf(p)] = numberOfNodes;
+                                switch(nullorNodeSelectionState){
+                                    case I:
+                                        nullorStampIndexes[0] = numberOfNodes;
+                                        std::cout << "I set : " << numberOfNodes << std::endl;
+                                        nullorNodeSelectionState = J;
+                                        break;
+                                    case J:
+                                        nullorStampIndexes[1] = numberOfNodes;
+                                        std::cout << "J set : " << numberOfNodes << std::endl;
+                                        nullorNodeSelectionState = K;
+                                        break;
+                                    case K:
+                                        nullorStampIndexes[2] = numberOfNodes;
+                                        std::cout << "K set : " << numberOfNodes << std::endl;
+                                        nullorNodeSelectionState = L;
+                                        break;
+                                    case L:
+                                        nullorStampIndexes[3] = numberOfNodes;
+                                        std::cout << "L set : " << numberOfNodes << std::endl;
+                                        nullorNodeSelectionState = I;
+                                        break;
+                                }
+                                
+                                wireNodeIndexes.push_back(numberOfNodes);
+                                numberOfNodes++;
+                            }
+                        }
+                        else { // Add voltage source stamp
+                            if(voltageSourceStampIndexes[portConnectionPoints.indexOf(p)] == -1){
+                                voltageSourceStampIndexes[portConnectionPoints.indexOf(p)] = numberOfNodes;
+                                switch(nullorNodeSelectionState){
+                                    case I:
+                                        nullorStampIndexes[0] = numberOfNodes;
+                                        std::cout << "I set : " << numberOfNodes << std::endl;
+                                        nullorNodeSelectionState = J;
+                                        break;
+                                    case J:
+                                        nullorStampIndexes[1] = numberOfNodes;
+                                        std::cout << "J set : " << numberOfNodes << std::endl;
+                                        nullorNodeSelectionState = K;
+                                        break;
+                                    case K:
+                                        nullorStampIndexes[2] = numberOfNodes;
+                                        std::cout << "K set : " << numberOfNodes << std::endl;
+                                        nullorNodeSelectionState = L;
+                                        break;
+                                    case L:
+                                        nullorStampIndexes[3] = numberOfNodes;
+                                        std::cout << "L set : " << numberOfNodes << std::endl;
+                                        nullorNodeSelectionState = I;
+                                        break;
+                                }
+                                wireNodeIndexes.push_back(numberOfNodes);
+                                numberOfNodes++;
+                            }
+                            
+                        }
+                    }
+                }
+            }
+            
+            
         }
         else{
             auto x = getXGrid(e.getPosition().getX());
@@ -1459,81 +1527,98 @@ public:
     }
     
     mat calculateScatteringMatrix(double *Rp){
-            if(wireNodeIndexes.size() == 0) return nullptr;
-            
-            auto n = (collums+rows)*2;
-            auto nInR = *(std::max_element(wireNodeIndexes.begin(),wireNodeIndexes.end())) + 1;
-            auto nTotal = n + nInR;
-            
-            for(auto i=0; i<resistorStampIndexes.size()/2; i++){
-                resistorStampIndexes[i*2] = i+nInR;
-                voltageSourceStampIndexes[i*2+1] = i+nInR;
-            }
-            
-            double R_val[n];
-            double G_val[n];
-            
-            //auto wdfChildComp = getChildsWDFTreeNodes();
-            
-            for(auto i=0; i<n; i++){
-    //            wdfChildComp[i]->setParentInChildren( );
-    //            wdfChildComp[i]->createPorts( );
-    //            wdfChildComp[i]->adaptPorts(1.0/44100.0);
-                R_val[i] = Rp[i];
-                G_val[i] = 1/Rp[i];
-            }
-            
-            mat I = eye(n, n);
-            mat R(n,n,fill::zeros);
-            for ( unsigned int ii = 0; ii < n; ++ii ) {
-                    R.at(ii, ii) = R_val[ii];
-                }
-            mat Z1(n,n+nInR-1,fill::zeros);
-            Z1 = join_rows(Z1,I);
-            mat Z2 = trans(Z1);
-            
-            
-            mat Y(nTotal,nTotal,fill::zeros);
-            mat A(nTotal,n,fill::zeros);
-            mat B(n,nTotal,fill::zeros);
-            mat D(n,n,fill::zeros);
-            
-            //resistor stamp index j - i
-            //j = resistorStampIndexes[i*2]
-            //i = resistorStampIndexes[i*2+1]
-            
-            for(auto i=0; i<n; i++){
-                //Resistor stamps
-                Y.at(resistorStampIndexes[i*2+1],resistorStampIndexes[i*2+1]) = Y.at(resistorStampIndexes[i*2+1],resistorStampIndexes[i*2+1]) + G_val[i];
-                Y.at(resistorStampIndexes[i*2+1],resistorStampIndexes[i*2]) = Y.at(resistorStampIndexes[i*2+1],resistorStampIndexes[i*2]) - G_val[i];
-                Y.at(resistorStampIndexes[i*2],resistorStampIndexes[i*2+1]) = Y.at(resistorStampIndexes[i*2],resistorStampIndexes[i*2+1]) - G_val[i];
-                Y.at(resistorStampIndexes[i*2],resistorStampIndexes[i*2]) = Y.at(resistorStampIndexes[i*2],resistorStampIndexes[i*2]) + G_val[i];
-                
-                //VolSource stamps
-                A.at(voltageSourceStampIndexes[i*2+1],i) = A.at(voltageSourceStampIndexes[i*2+1],i) + 1;
-                A.at(voltageSourceStampIndexes[i*2],i) = A.at(voltageSourceStampIndexes[i*2],i) - 1;
-                B.at(i,voltageSourceStampIndexes[i*2+1]) = B.at(i,voltageSourceStampIndexes[i*2+1]) + 1;
-                B.at(i,voltageSourceStampIndexes[i*2]) = B.at(i,voltageSourceStampIndexes[i*2]) - 1;
-            }
-            Y.print();
-            A.print();
-            B.print();
-            
-            mat X1 = join_rows(Y,A);
-            mat X2 = join_rows(B,D);
-            mat X = join_cols(X1, X2);
-            
-            X.print();
-            
-            X = X.submat(1, 1, nTotal+n-1, nTotal+n-1);
-            
-            X.print();
-            
-            mat S = I + 2*R*Z1*inv(X)*Z2*I;
-            S.print();
-            Smat = S;
-            return S;
+        if(wireNodeIndexes.size() == 0) return nullptr;
+        
+    
+        auto nNullors = nullorStampIndexes.size()/4;
+        auto n = (collums+rows)*2;
+        auto nInR = *(std::max_element(wireNodeIndexes.begin(),wireNodeIndexes.end())) + 1;
+        auto nTotal = n + nInR;
+        
+        for(auto i=0; i<resistorStampIndexes.size()/2; i++){
+            resistorStampIndexes[i*2] = i+nInR;
+            voltageSourceStampIndexes[i*2+1] = i+nInR;
         }
+        
+        double R_val[n];
+        double G_val[n];
+        
+        //auto wdfChildComp = getChildsWDFTreeNodes();
+        
+        for(auto i=0; i<n; i++){
+//            wdfChildComp[i]->setParentInChildren( );
+//            wdfChildComp[i]->createPorts( );
+//            wdfChildComp[i]->adaptPorts(1.0/44100.0);
+            R_val[i] = Rp[i];
+            G_val[i] = 1/Rp[i];
+        }
+        
+        mat I = eye(n, n);
+        mat R(n,n,fill::zeros);
+        for ( unsigned int ii = 0; ii < n; ++ii ) {
+                R.at(ii, ii) = R_val[ii];
+            }
+        mat Z1(n,n+nInR-1,fill::zeros);
+        Z1 = join_rows(Z1,I);
+        if(nNullors != 0){
+            mat Z1N(n,nNullors, fill::zeros);
+            Z1 = join_rows(Z1,Z1N);
+        }
+        mat Z2 = trans(Z1);
+        
+        
+        mat Y(nTotal,nTotal,fill::zeros);
+        mat A(nTotal,n+nNullors,fill::zeros);
+        mat B(n+nNullors,nTotal,fill::zeros);
+        mat D(n+nNullors,n+nNullors,fill::zeros);
+        
+        //resistor stamp index j - i
+        //j = resistorStampIndexes[i*2]
+        //i = resistorStampIndexes[i*2+1]
+        
+        for(auto i=0; i<n; i++){
+            //Resistor stamps
+            Y.at(resistorStampIndexes[i*2+1],resistorStampIndexes[i*2+1]) = Y.at(resistorStampIndexes[i*2+1],resistorStampIndexes[i*2+1]) + G_val[i];
+            Y.at(resistorStampIndexes[i*2+1],resistorStampIndexes[i*2]) = Y.at(resistorStampIndexes[i*2+1],resistorStampIndexes[i*2]) - G_val[i];
+            Y.at(resistorStampIndexes[i*2],resistorStampIndexes[i*2+1]) = Y.at(resistorStampIndexes[i*2],resistorStampIndexes[i*2+1]) - G_val[i];
+            Y.at(resistorStampIndexes[i*2],resistorStampIndexes[i*2]) = Y.at(resistorStampIndexes[i*2],resistorStampIndexes[i*2]) + G_val[i];
+            
+            //VolSource stamps
+            A.at(voltageSourceStampIndexes[i*2+1],i) = A.at(voltageSourceStampIndexes[i*2+1],i) + 1;
+            A.at(voltageSourceStampIndexes[i*2],i) = A.at(voltageSourceStampIndexes[i*2],i) - 1;
+            B.at(i,voltageSourceStampIndexes[i*2+1]) = B.at(i,voltageSourceStampIndexes[i*2+1]) + 1;
+            B.at(i,voltageSourceStampIndexes[i*2]) = B.at(i,voltageSourceStampIndexes[i*2]) - 1;
+            
+            
+        }
+        
+        for (auto i=0; i<nNullors; i++){
+            //Nullor stamps
+            A.at(nullorStampIndexes[2+i*4],n+i) = A.at(nullorStampIndexes[2+i*4],n+i) + 1;
+            A.at(nullorStampIndexes[3+i*4],n+i) = A.at(nullorStampIndexes[3+i*4],n+i) - 1;
+            B.at(n+i,nullorStampIndexes[0+i*4]) = B.at(n+i,nullorStampIndexes[0+i*4]) + 1;
+            B.at(n+i,nullorStampIndexes[1+i*4]) = B.at(n+i,nullorStampIndexes[1+i*4]) - 1;
+        }
+        
+        Y.print();
+        A.print();
+        B.print();
+        
+        mat X1 = join_rows(Y,A);
+        mat X2 = join_rows(B,D);
+        mat X = join_cols(X1, X2);
+        
+        X.print();
+        
+        X = X.submat(1, 1, nTotal+n+nNullors-1, nTotal+n+nNullors-1);
+        
+        X.print();
+        
+        mat S = I + 2*R*Z1*inv(X)*Z2*I;
+        S.print();
+        Smat = S;
+        return S;
+    }
     
     void createNullorStamps(){
         isCreatingNullor = true;
