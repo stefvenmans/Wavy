@@ -7,7 +7,7 @@
 
 
 enum ComponentType {
-    L_RES,L_CAP,L_IND,L_VOL,L_CUR,A_INV,A_SER,A_PAR,SR_VOL,SR_CUR,SR_SHC,NOT_SET
+    L_RES,L_CAP,L_IND,L_VOL,L_CUR,A_INV,A_SER,A_PAR,SR_VOL,SR_CUR,SR_SHC,R_RNODE,NOT_SET
 };
 
 
@@ -1181,13 +1181,49 @@ public:
             isDragging = true;
             this->CircuitComponent::mouseDown(e);
         }
+        else if(isCreatingNullor){
+            //Get node information
+            
+            auto x = getXGrid(e.getPosition().getX());
+            auto y = getYGrid(e.getPosition().getY());
+            for(auto w : wires){
+                if(w->intersectsLine(juce::Line<float>(x-1,y-1,x+1,y+1),0)){
+                    
+                    switch(nullorNodeSelectionState){
+                        case I:
+                            nullorStampIndexes[0] = wireNodeIndexes[wires.indexOf(w)];
+                            std::cout << "I set : " << wireNodeIndexes[wires.indexOf(w)] << std::endl;
+                            nullorNodeSelectionState = J;
+                            break;
+                        case J:
+                            nullorStampIndexes[1] = wireNodeIndexes[wires.indexOf(w)];
+                            std::cout << "J set : " << wireNodeIndexes[wires.indexOf(w)] << std::endl;
+                            nullorNodeSelectionState = K;
+                            break;
+                        case K:
+                            nullorStampIndexes[2] = wireNodeIndexes[wires.indexOf(w)];
+                            std::cout << "K set : " << wireNodeIndexes[wires.indexOf(w)] << std::endl;
+                            nullorNodeSelectionState = L;
+                            break;
+                        case L:
+                            nullorStampIndexes[3] = wireNodeIndexes[wires.indexOf(w)];
+                            std::cout << "L set : " << wireNodeIndexes[wires.indexOf(w)] << std::endl;
+                            nullorNodeSelectionState = I;
+                            break;
+                    }
+                    return;
+                }
+                    
+                
+            }
+        }
         else{
             auto x = getXGrid(e.getPosition().getX());
             auto y = getYGrid(e.getPosition().getY());
             if(isDrawingWire){
                 //Check if it can connect to another wire
                 for(auto w : wires){
-                    if(w->intersectsLine(juce::Line<float>(x-1,y-1,x+1,y+1),0)){
+                    if(w->intersectsLine(juce::Line<float>(x-1,y-1,x+1,y+1),0) && w != wires.getLast()){
                         wires.getLast()->addLineSegment(juce::Line<float>(startPoint, endPoint),0);
                         interconnectionPoints.add(new juce::Point<float>(x,y));
                         isDrawingWire = false;
@@ -1501,8 +1537,16 @@ public:
     
     void createNullorStamps(){
         isCreatingNullor = true;
+        for(auto i=0; i<4; i++){
+            nullorStampIndexes.push_back(-1);
+        }
+        nullorNodeSelectionState = I;
     }
     
+    ComponentType getComponentType() override{
+        return ComponentType::R_RNODE;
+    }
+
 private:
     std::vector<AdaptedLeafComponent*> childs;
     AdaptedLeafComponent** childsA;
@@ -1525,13 +1569,15 @@ private:
     juce::OwnedArray<juce::Point<float>> portConnectionPoints;
     std::vector<int> resistorStampIndexes;
     std::vector<int> voltageSourceStampIndexes;
-    std::vector<int> nullorStampIndex;
+    std::vector<int> nullorStampIndexes;
     std::vector<int> wireNodeIndexes;
     int numberOfNodes = 0;
     juce::TextButton printIndexButton;
     mat Smat;
     int xyOff = 11;
     bool isCreatingNullor = false;
+    enum NullorNodeSelectionState {I, J, K, L};
+    NullorNodeSelectionState nullorNodeSelectionState;
     
     
 };
@@ -2903,6 +2949,10 @@ public:
         addAndMakeVisible(setInput);
         setInput.setBounds(50,100,25,25);
         setInput.addListener(this);
+        
+        addChildComponent(addNullorButton);
+        addNullorButton.setBounds(100,20,50,50);
+        addNullorButton.addListener(this);
     }
     
     void paint (juce::Graphics& g) override{
@@ -2951,6 +3001,12 @@ public:
                 componentName.setText("ROOT Voltage Source",juce::NotificationType::dontSendNotification);
                 prop1.setText(juce::String(((IdealVoltageSource_*)c)->getVs()),juce::NotificationType::dontSendNotification);
                 prop1.setVisible(true);
+                break;
+            case R_RNODE:
+                prop1.setVisible(false);
+                prop2.setVisible(false);
+                componentName.setText("R Node",juce::NotificationType::dontSendNotification);
+                addNullorButton.setVisible(true);
                 break;
         }
         
@@ -3010,6 +3066,9 @@ public:
                 setInputOfCircuit(componentLastSelected);
             }
         }
+        else if(b == &addNullorButton){
+            ((RNode_*)componentLastSelected)->createNullorStamps();
+        }
     }
     
     
@@ -3021,6 +3080,7 @@ private:
     CircuitComponent* componentLastSelected = nullptr;
     juce::ToggleButton setOutput;
     juce::ToggleButton setInput;
+    juce::TextButton addNullorButton;
     std::function<void(CircuitComponent* c)> setOutputOfCircuit;
     std::function<void(CircuitComponent* c)> setInputOfCircuit;
 };

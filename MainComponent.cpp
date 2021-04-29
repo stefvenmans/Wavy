@@ -241,6 +241,7 @@ MainComponent::MainComponent()
                 schematic.addAndMakeVisible(rNode.get());
                 rNode->setCentrePosition(200, 200);
                 rNode->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
+                rNode->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
                 break;
             case 9:
                 schematic.addAndMakeVisible(leafComponents.add(new VoltageSource_()));
