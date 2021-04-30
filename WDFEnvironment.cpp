@@ -12,6 +12,7 @@
 
 
 WdfEnvironment::WdfEnvironment(){
+    setSamplerate(44100);
     subtreeCount = 1;
     subtreeEntryNodes = new wdfTreeNode*[subtreeCount];
 }
