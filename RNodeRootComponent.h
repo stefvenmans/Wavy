@@ -18,8 +18,8 @@ public:
     RNodeRootComponent();
     void paint (juce::Graphics& g) override;
     void connect(CircuitComponent* c) override ;
-    int getCollums();
-    int getRows();
+    int getCollums() override;
+    int getRows() override;
     int getNumChilds();
     std::vector<wdfTreeNode*> getChildsWDFTreeNodes ();
     void mouseDoubleClick(const juce::MouseEvent & e) override;
@@ -56,7 +56,6 @@ private:
     std::vector<int> nullorStampIndexes;
     std::vector<int> wireNodeIndexes;
     int numberOfNodes = 0;
-    juce::TextButton printIndexButton;
     mat Smat;
     int xyOff = 11;
     bool isCreatingNullor = false;

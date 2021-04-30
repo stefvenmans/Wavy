@@ -161,3 +161,10 @@ void CircuitComponent::setPropertyPanelCallback(std::function<void(CircuitCompon
     propertyPanelCallback = callbackFunction;
 }
     
+int CircuitComponent::getCollums(){
+    return 1;
+}
+
+int CircuitComponent::getRows(){
+    return 1;
+}

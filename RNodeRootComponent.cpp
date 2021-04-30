@@ -77,30 +77,6 @@ RNodeRootComponent::RNodeRootComponent() : CircuitComponent(""){
         std::cout << "p :   " << p->getX() << "-" << p->getY() << std::endl;
     }
     
-    //addAndMakeVisible(&printIndexButton);
-    printIndexButton.setBounds(30,30,10,10);
-    printIndexButton.onClick = [this](){
-        
-        if(wireNodeIndexes.size() == 0) return;
-        auto nInR = *(std::max_element(wireNodeIndexes.begin(),wireNodeIndexes.end())) + 1;
-        //Add outside node indexes to stamps
-        for(auto i=0; i<resistorStampIndexes.size()/2; i++){
-            resistorStampIndexes[i*2] = i+nInR;
-            voltageSourceStampIndexes[i*2+1] = i+nInR;
-        }
-        
-        
-        for(auto i=0; i<resistorStampIndexes.size()/2; i++){
-            std::cout << "R" << i << " j:" << resistorStampIndexes[i*2] << " i:" << resistorStampIndexes[i*2+1] << "    V" << i << " j:" << voltageSourceStampIndexes[i*2] << " i:" << voltageSourceStampIndexes[i*2+1] << std::endl;
-            
-        }
-        
-        std::cout << getChildsWDFTreeNodes().size() << std::endl;
-        calculateScatteringMatrix();
-    };
-
-    
-    
 }
 
 void RNodeRootComponent::paint (juce::Graphics& g)

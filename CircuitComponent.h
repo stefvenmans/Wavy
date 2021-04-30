@@ -28,6 +28,8 @@ public:
     bool hasOrientation(int orientation);
     virtual ComponentType getComponentType();
     void setPropertyPanelCallback(std::function<void(CircuitComponent* c)> callbackFunction);
+    virtual int getCollums();
+    virtual int getRows();
     
 protected:
     juce::String svgFileName;
