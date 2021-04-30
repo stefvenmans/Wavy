@@ -36,9 +36,6 @@ public:
     int getIndexOfPortOrientation(int o);
 private:
     std::vector<AdaptedLeafComponent*> childs;
-    AdaptedLeafComponent** childsA;
-    int rowsY;
-    int collumsX;
     bool nodeDrawView = false;
     
     juce::OwnedArray<juce::Path> wires;

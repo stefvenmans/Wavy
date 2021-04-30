@@ -12,6 +12,14 @@
 #include "../rt-wdf_lib/Libs/rt-wdf/rt-wdf.h"
 #include <JuceHeader.h>
 
+//#define C_WIDTH 100
+//#define C_HEIGHT 100
+
 enum ComponentType {
     L_RES,L_CAP,L_IND,L_VOL,L_CUR,A_INV,A_SER,A_PAR,SR_VOL,SR_CUR,SR_SHC,R_RNODE,NOT_SET
 };
+
+static const int componentWidth = 100;
+static const int componentHeight = 100;
+
+

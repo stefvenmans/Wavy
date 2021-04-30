@@ -12,11 +12,9 @@
 
 RNodeRootComponent::RNodeRootComponent() : CircuitComponent(""){
     
-    collumsX = 1;
-    rowsY = 1;
-    collums = 1;
+    collums = 3;
     rows = 1;
-    setSize(collums*100,rows*100);
+    setSize(collums*componentWidth,rows*componentHeight);
     
     //North
     for(auto i=0; i<collums; i++){
@@ -26,7 +24,7 @@ RNodeRootComponent::RNodeRootComponent() : CircuitComponent(""){
         //Create connection points
         for(auto j=0; j<2 ; j++){
             gridSize = (getWidth()-2*borderOffset)/(collums*2-1);
-            portConnectionPoints.add(new juce::Point<float>(getXGrid(borderOffset+j*gridSize),11));
+            portConnectionPoints.add(new juce::Point<float>(getXGrid(borderOffset+j*gridSize + i*componentWidth),11));
             resistorStampIndexes.push_back(-1);
             voltageSourceStampIndexes.push_back(-1);
         }
@@ -39,27 +37,27 @@ RNodeRootComponent::RNodeRootComponent() : CircuitComponent(""){
         //Create connection points
         for(auto j=0; j<2 ; j++){
             gridSize = (getHeight()-2*borderOffset)/(rows*2-1);
-            portConnectionPoints.add(new juce::Point<float>(getWidth()-11,getYGrid(borderOffset+j*gridSize)));
+            portConnectionPoints.add(new juce::Point<float>(getWidth()-11,getYGrid(borderOffset+j*gridSize + i*componentHeight)));
             resistorStampIndexes.push_back(-1);
             voltageSourceStampIndexes.push_back(-1);
         }
 
     }
     //South
-    for(auto i=0; i<collums; i++){
-        portOrientations.push_back(2);
-        isConnected.push_back(false);
-        childs.push_back(nullptr);
-        //Create connection points
-        for(auto j=0; j<2 ; j++){
-            gridSize = (getWidth()-2*borderOffset)/(collums*2-1);
-            std::cout << " ! " << borderOffset+(collums*2-1-j)*gridSize << std::endl;
-            portConnectionPoints.add(new juce::Point<float>(getXGrid(borderOffset+(collums*2-1-j)*gridSize),getHeight()-11));
-            resistorStampIndexes.push_back(-1);
-            voltageSourceStampIndexes.push_back(-1);
-        }
-        
-    }
+//    for(auto i=0; i<collums; i++){
+//        portOrientations.push_back(2);
+//        isConnected.push_back(false);
+//        childs.push_back(nullptr);
+//        //Create connection points
+//        for(auto j=0; j<2 ; j++){
+//            gridSize = (getWidth()-2*borderOffset)/(collums*2-1);
+//            std::cout << " ! " << borderOffset+(collums*2-1-j)*gridSize << std::endl;
+//            portConnectionPoints.add(new juce::Point<float>(getXGrid(borderOffset+(collums*2-1-j)*gridSize - i*componentWidth),getHeight()-11));
+//            resistorStampIndexes.push_back(-1);
+//            voltageSourceStampIndexes.push_back(-1);
+//        }
+//
+//    }
     //West
     for(auto i=0; i<rows; i++){
         portOrientations.push_back(3);
@@ -68,7 +66,7 @@ RNodeRootComponent::RNodeRootComponent() : CircuitComponent(""){
         //Create connection points
         for(auto j=0; j<2 ; j++){
             gridSize = (getHeight()-2*borderOffset)/(rows*2-1);
-            portConnectionPoints.add(new juce::Point<float>(11,getYGrid(borderOffset+(rows*2-1-j)*gridSize)));
+            portConnectionPoints.add(new juce::Point<float>(11,getYGrid(borderOffset+(rows*2-1-j)*gridSize - i*componentHeight)));
             resistorStampIndexes.push_back(-1);
             voltageSourceStampIndexes.push_back(-1);
         }
@@ -160,8 +158,8 @@ void RNodeRootComponent::connect(CircuitComponent* c) {
         switch(o){
             case 0:
                 //Check if component is above + has orientation 2
-                for(auto i=0 ; i<collumsX; i++){
-                    if(c->getY() + c->getHeight() == getY() && c->getX() == getX() + i*(getWidth()/collumsX) && c->hasOrientation(2)){
+                for(auto i=0 ; i<collums; i++){
+                    if(c->getY() + c->getHeight() == getY() && c->getX() == getX() + i*(getWidth()/collums) && c->hasOrientation(2)){
                         std::cout << "circuit will be able to connect to this side : " << o << "with index : " << i << std::endl;
                         connectSuccesfull = true;
                         childs[i] = (AdaptedLeafComponent*)c;
@@ -172,8 +170,8 @@ void RNodeRootComponent::connect(CircuitComponent* c) {
                 break;
             case 1:
                 //Check if component is right + has orientation 3
-                for(auto i=0; i<rowsY; i++){
-                    if(getX() + getWidth() == c->getX() && c->getY() == getY() + i*(getHeight()/rowsY) && c->hasOrientation(3)){
+                for(auto i=0; i<rows; i++){
+                    if(getX() + getWidth() == c->getX() && c->getY() == getY() + i*(getHeight()/rows) && c->hasOrientation(3)){
                         std::cout << "circuit will be able to connect to this side : " << o << "with index : " << i << std::endl;
                         connectSuccesfull = true;
                         childs[i+getIndexOfPortOrientation(1)] = (AdaptedLeafComponent*)c;
@@ -184,8 +182,8 @@ void RNodeRootComponent::connect(CircuitComponent* c) {
                 break;
             case 2:
                 //Check if component is under + has orientation 0
-                for(auto i=0 ; i<collumsX; i++){
-                    if(getY() + getHeight() == c->getY() && c->getX() == getX() + i*(getWidth()/collumsX) && c->hasOrientation(0)){
+                for(auto i=0 ; i<collums; i++){
+                    if(getY() + getHeight() == c->getY() && c->getX() == getX() + i*(getWidth()/collums) && c->hasOrientation(0)){
                         std::cout << "circuit will be able to connect to this side : " << o << "with index : " << i + 2 << std::endl;
                         connectSuccesfull = true;
                         childs[getIndexOfPortOrientation(2) +(collums-i-1)] = (AdaptedLeafComponent*)c;
@@ -196,8 +194,8 @@ void RNodeRootComponent::connect(CircuitComponent* c) {
                 break;
             case 3:
                 //Check if component is left + has orientation 1
-                for(auto i=0; i<rowsY; i++){
-                    if(c->getX() + c->getWidth() == getX() && c->getY() == getY() + i*(getHeight()/rowsY) && c->hasOrientation(1)){
+                for(auto i=0; i<rows; i++){
+                    if(c->getX() + c->getWidth() == getX() && c->getY() == getY() + i*(getHeight()/rows) && c->hasOrientation(1)){
                         std::cout << "circuit will be able to connect to this side : " << o << "with index : " << i + 4 << std::endl;
                         connectSuccesfull = true;
                         childs[getIndexOfPortOrientation(3) +(rows-i-1)] = (AdaptedLeafComponent*)c;
@@ -220,10 +218,10 @@ void RNodeRootComponent::connect(CircuitComponent* c) {
 }
 
 int RNodeRootComponent::getCollums(){
-    return collumsX;
+    return collums;
 }
 int RNodeRootComponent::getRows(){
-    return rowsY;
+    return rows;
 }
 
 //    wdfRootNode * createWDFComponent(){
