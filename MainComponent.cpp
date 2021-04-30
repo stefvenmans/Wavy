@@ -36,58 +36,6 @@ MainComponent::MainComponent()
     addAndMakeVisible(calculateMatButton);
     calculateMatButton.setButtonText("Mat");
     calculateMatButton.onClick = [this](){
-        const double R_val[6] = {1.0, 1e6, (1.0/44100.0)/(2.0*0.015e-6), (1.0/44100.0)/(2.0*0.015e-6), 1e6, 53.8e3};
-        
-        mat I = eye(6, 6);
-        mat R(6,6,fill::zeros);
-        for ( unsigned int ii = 0; ii < 6; ++ii ) {
-                R.at(ii, ii) = R_val[ii];
-            }
-        mat Z1(6,9,fill::zeros);
-        Z1 = join_rows(Z1,I);
-        mat Z2 = trans(Z1);
-        
-        
-        const double Ga = 1.0/R_val[0];
-        const double Gb = 1.0/R_val[1];
-        const double Gc = 1.0/R_val[2];
-        const double Gd = 1.0/R_val[3];
-        const double Ge = 1.0/R_val[4];
-        const double Gf = 1.0/R_val[5];
-        
-        
-        mat Y({ {0,     0,      0,      0,      0,      0,      0,      0,      0,      0},
-            {0,     Gd+Ge,  0,      0,      0,      0,      0,      -Gd,    -Ge,    0},
-            {0,     0,      Ga+Gb,  0,      -Ga,    -Gb,    0,      0,      0,      0},
-            {0,     0,      0,      Gc+Gf,  0,      0,      -Gc,    0,      0,      -Gf},
-            {0,     0,      -Ga,    0,      Ga,     0,      0,      0,      0,      0},
-            {0,     0,      -Gb,    0,      0,      Gb,     0,      0,      0,      0},
-            {0,     0,      0,      -Gc,    0,      0,      Gc,     0,      0,      0},
-            {0,     -Gd,    0,      0,      0,      0,      0,      Gd,     0,      0},
-            {0,     -Ge,    0,      0,      0,      0,      0,      0,      Ge,     0},
-            {0,     0,      0,      -Gf,    0,      0,      0,      0,      0,      Gf}});
-        
-        mat A({{-1,   0,  0,  0,  -1, -1},
-            {0,   -1, 0,  0,  0,  0},
-            {0,   0,  -1, 0,  0,  0},
-            {0,   0,  0,  -1, 0,  0}});
-        A = join_cols(A,I);
-        
-        mat B = -eye(4,4);
-        mat addToB({{-1, 0, 0, 0}, {-1, 0, 0, 0}});
-        B = join_cols(B,addToB);
-        B = join_rows(B,I);
-        
-        mat D(6,6,fill::zeros);
-        mat X1 = join_rows(Y,A);
-        mat X2 = join_rows(B,D);
-        mat X = join_cols(X1, X2);
-        
-        X = X.submat(1, 1, 15, 15);
-        
-        mat S = I + 2*R*Z1*inv(X)*Z2*I;
-        S.print();
-        Smat = S;
         
     };
     
@@ -99,30 +47,7 @@ MainComponent::MainComponent()
             wdfEnvironment.setRoot(simpleRoot->createWDFComponent());
         }
         else if(rNode != nullptr){
-            //wdfEnvironment.setRoot(rNode->createWDFComponent());
-            
-//            const double scat[6][6] = {
-//                {0.999961398551509, 3.06194644718824e-08, -3.85708290267018e-05, -1.93872246960703e-06, 1.96934193407962e-06, 3.66321065570946e-05},
-//                {0.0306194644718891, -0.997006500327189, -1.96638703585530, -1.99401303127384, -0.00299346905334667, -0.0276259954185430},
-//                {-0.0291540657798200, -0.00148630917298202, 0.969359625047198, -0.00297258919189813, 0.00148628001891631, 0.0276677857609040},
-//                {-0.00146539869206916, -0.00150719049982899, -0.00297258919189822, 0.996985620465741, 0.00150718903443037, -4.17903423610279e-05},
-//                {1.96934193407962, -0.00299346905334586, 1.96634846502627, 1.99401109255137, -0.997004561604719, 0.0276626275251001},
-//                {1.97080733277169, -0.00148627855351745, 1.96932105421817, -0.00297452791436775, 0.00148824936085039, -0.972295582132539}
-//            };
-            
-            
-            
-            
-            
-            
-            
-//            for ( unsigned int ii = 0; ii < 6; ++ii ) {
-//                    for ( unsigned int jj = 0; jj < 6; ++jj ) {
-//                        Smat.at(ii, jj) = scat[ii][jj];
-//                    }
-//
-//                }
-            //wdfEnvironment.setSMat(Smat);
+
             wdfEnvironment.setSMat(rNode->calculateScatteringMatrix());
             
             wdfEnvironment.setSubtreeEntryNodes(rNode->getChildsWDFTreeNodes());

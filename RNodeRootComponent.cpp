@@ -43,8 +43,6 @@ RNodeRootComponent::RNodeRootComponent() : CircuitComponent(""){
         childs.push_back(nullptr);
     }
     
-    childsA = new AdaptedLeafComponent*[(collums+rows)*2];
-    
     gridSize = (getHeight()-2*borderOffset)/(rows*2-1);
     //North
     for(auto i=0; i<collums*2 ; i++){
@@ -116,7 +114,7 @@ void RNodeRootComponent::paint (juce::Graphics& g)
     if(nodeDrawView){
         g.setColour(juce::Colours::black);
         for(auto p: portConnectionPoints){
-            g.drawEllipse(p->getX()-2, p->getY()-2, 4, 4, 4);
+            g.drawEllipse(p->getX()-1, p->getY()-1, 2, 2, 2);
         }
         
         if(isDrawingWire){
@@ -128,7 +126,7 @@ void RNodeRootComponent::paint (juce::Graphics& g)
         }
         
         for(auto p: interconnectionPoints){
-            g.drawEllipse(p->getX()-1, p->getY()-1, 2, 2, 2);
+            g.drawEllipse(p->getX()-2, p->getY()-2, 4, 4, 4);
         }
     }
     else{
@@ -153,9 +151,8 @@ void RNodeRootComponent::connect(CircuitComponent* c) {
                     if(c->getY() + c->getHeight() == getY() && c->getX() == getX() + i*(getWidth()/collumsX) && c->hasOrientation(2)){
                         std::cout << "circuit will be able to connect to this side : " << o << "with index : " << i << std::endl;
                         connectSuccesfull = true;
-                        childs.insert(childs.begin()+i,(AdaptedLeafComponent*)c);
-                        childsA[i] = (AdaptedLeafComponent*)c;
-                        //std::cout << "inserted at index: " << childs.begin()+i << std::endl;
+                        childs[i] = (AdaptedLeafComponent*)c;
+        
                         return;
                     }
                 }
@@ -166,8 +163,8 @@ void RNodeRootComponent::connect(CircuitComponent* c) {
                     if(getX() + getWidth() == c->getX() && c->getY() == getY() + i*(getHeight()/rowsY) && c->hasOrientation(3)){
                         std::cout << "circuit will be able to connect to this side : " << o << "with index : " << i << std::endl;
                         connectSuccesfull = true;
-                        childs.insert(childs.begin()+i + collums,(AdaptedLeafComponent*)c);
-                        childsA[i+collums] = (AdaptedLeafComponent*)c;
+                        childs[i+collums] = (AdaptedLeafComponent*)c;
+                        
                         return;
                     }
                 }
@@ -178,9 +175,8 @@ void RNodeRootComponent::connect(CircuitComponent* c) {
                     if(getY() + getHeight() == c->getY() && c->getX() == getX() + i*(getWidth()/collumsX) && c->hasOrientation(0)){
                         std::cout << "circuit will be able to connect to this side : " << o << "with index : " << i + 2 << std::endl;
                         connectSuccesfull = true;
-                        childs.insert(childs.begin()+ collums+rows +(collums-i-1),(AdaptedLeafComponent*)c);
-                        //childsA[i + collums+rows] = (AdaptedLeafComponent*)c;
-                        childsA[collums+rows +(collums-i-1)] = (AdaptedLeafComponent*)c;
+                        childs[collums+rows +(collums-i-1)] = (AdaptedLeafComponent*)c;
+                        
                         return;
                     }
                 }
@@ -191,9 +187,8 @@ void RNodeRootComponent::connect(CircuitComponent* c) {
                     if(c->getX() + c->getWidth() == getX() && c->getY() == getY() + i*(getHeight()/rowsY) && c->hasOrientation(1)){
                         std::cout << "circuit will be able to connect to this side : " << o << "with index : " << i + 4 << std::endl;
                         connectSuccesfull = true;
-                        childs.insert(childs.begin()+i + collums*2+rows,(AdaptedLeafComponent*)c);
-                        //childsA[i + collums*2+rows] = (AdaptedLeafComponent*)c;
-                        childsA[collums*2+rows +(rows-i-1)] = (AdaptedLeafComponent*)c;
+                        childs[collums*2+rows +(rows-i-1)] = (AdaptedLeafComponent*)c;
+                        
                         return;
                     }
                 }
@@ -236,8 +231,8 @@ int RNodeRootComponent::getNumChilds(){
 
 std::vector<wdfTreeNode*> RNodeRootComponent::getChildsWDFTreeNodes (){
     std::vector<wdfTreeNode*> childsWDFTreeNodes;
-    for(auto i=0; i<(collums+rows)*2; i++){
-        childsWDFTreeNodes.push_back(childsA[i]->createWDFComponent());
+    for(auto c : childs){
+        childsWDFTreeNodes.push_back(c->createWDFComponent());
     }
     return childsWDFTreeNodes;
 }
@@ -538,9 +533,6 @@ mat RNodeRootComponent::calculateScatteringMatrix(){
     auto wdfChildComp = getChildsWDFTreeNodes();
     
     for(auto i=0; i<n; i++){
-//            wdfChildComp[i]->setParentInChildren( );
-//            wdfChildComp[i]->createPorts( );
-//            wdfChildComp[i]->adaptPorts(1.0/44100.0);
         R_val[i] = wdfChildComp[i]->calculateUpRes(1.0/44100.0);
         G_val[i] = 1/(wdfChildComp[i]->calculateUpRes(1.0/44100.0));
     }
