@@ -33,6 +33,7 @@ public:
     mat calculateScatteringMatrix(double *Rp);
     void createNullorStamps();
     ComponentType getComponentType() override;
+    int getIndexOfPortOrientation(int o);
 private:
     std::vector<AdaptedLeafComponent*> childs;
     AdaptedLeafComponent** childsA;

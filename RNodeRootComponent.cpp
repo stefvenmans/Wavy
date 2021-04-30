@@ -23,53 +23,56 @@ RNodeRootComponent::RNodeRootComponent() : CircuitComponent(""){
         portOrientations.push_back(0);
         isConnected.push_back(false);
         childs.push_back(nullptr);
+        //Create connection points
+        for(auto j=0; j<2 ; j++){
+            gridSize = (getWidth()-2*borderOffset)/(collums*2-1);
+            portConnectionPoints.add(new juce::Point<float>(getXGrid(borderOffset+j*gridSize),11));
+            resistorStampIndexes.push_back(-1);
+            voltageSourceStampIndexes.push_back(-1);
+        }
     }
     //East
     for(auto i=0; i<rows; i++){
         portOrientations.push_back(1);
         isConnected.push_back(false);
         childs.push_back(nullptr);
+        //Create connection points
+        for(auto j=0; j<2 ; j++){
+            gridSize = (getHeight()-2*borderOffset)/(rows*2-1);
+            portConnectionPoints.add(new juce::Point<float>(getWidth()-11,getYGrid(borderOffset+j*gridSize)));
+            resistorStampIndexes.push_back(-1);
+            voltageSourceStampIndexes.push_back(-1);
+        }
+
     }
     //South
     for(auto i=0; i<collums; i++){
         portOrientations.push_back(2);
         isConnected.push_back(false);
         childs.push_back(nullptr);
+        //Create connection points
+        for(auto j=0; j<2 ; j++){
+            gridSize = (getWidth()-2*borderOffset)/(collums*2-1);
+            std::cout << " ! " << borderOffset+(collums*2-1-j)*gridSize << std::endl;
+            portConnectionPoints.add(new juce::Point<float>(getXGrid(borderOffset+(collums*2-1-j)*gridSize),getHeight()-11));
+            resistorStampIndexes.push_back(-1);
+            voltageSourceStampIndexes.push_back(-1);
+        }
+        
     }
     //West
     for(auto i=0; i<rows; i++){
         portOrientations.push_back(3);
         isConnected.push_back(false);
         childs.push_back(nullptr);
-    }
-    
-    gridSize = (getHeight()-2*borderOffset)/(rows*2-1);
-    //North
-    for(auto i=0; i<collums*2 ; i++){
-        gridSize = (getWidth()-2*borderOffset)/(collums*2-1);
-        portConnectionPoints.add(new juce::Point<float>(getXGrid(borderOffset+i*gridSize),11));
-    }
-    //East
-    for(auto i=0; i<rows*2 ; i++){
-        gridSize = (getHeight()-2*borderOffset)/(rows*2-1);
-        portConnectionPoints.add(new juce::Point<float>(getWidth()-11,getYGrid(borderOffset+i*gridSize)));
-    }
-    //South
-    for(auto i=0; i<collums*2 ; i++){
-        gridSize = (getWidth()-2*borderOffset)/(collums*2-1);
-        std::cout << " ! " << borderOffset+(collums*2-1-i)*gridSize << std::endl;
-        portConnectionPoints.add(new juce::Point<float>(getXGrid(borderOffset+(collums*2-1-i)*gridSize),getHeight()-11));
-    }
-    //West
-    for(auto i=0; i<rows*2 ; i++){
-        gridSize = (getHeight()-2*borderOffset)/(rows*2-1);
-        portConnectionPoints.add(new juce::Point<float>(11,getYGrid(borderOffset+(rows*2-1-i)*gridSize)));
-    }
-    
-    //Create stamp indexes (4 sides) -> -1 for not connected
-    for(auto i=0; i<((collums+rows)*2)*2 ; i++){
-        resistorStampIndexes.push_back(-1);
-        voltageSourceStampIndexes.push_back(-1);
+        //Create connection points
+        for(auto j=0; j<2 ; j++){
+            gridSize = (getHeight()-2*borderOffset)/(rows*2-1);
+            portConnectionPoints.add(new juce::Point<float>(11,getYGrid(borderOffset+(rows*2-1-j)*gridSize)));
+            resistorStampIndexes.push_back(-1);
+            voltageSourceStampIndexes.push_back(-1);
+        }
+        
     }
     
     for(auto p: portConnectionPoints){
@@ -139,6 +142,16 @@ void RNodeRootComponent::paint (juce::Graphics& g)
     g.drawRect(10,10,collums*100-20,rows*100-20,2);
 }
 
+int RNodeRootComponent::getIndexOfPortOrientation(int o){
+    std::vector<int>::iterator it = std::find(portOrientations.begin(), portOrientations.end(), o);
+    if (it != portOrientations.end()){
+        return std::distance(portOrientations.begin(), it);
+    }
+    else{
+        return -1;
+    }
+}
+
 void RNodeRootComponent::connect(CircuitComponent* c) {
     //Check if at right side
     auto index = 0;
@@ -163,7 +176,7 @@ void RNodeRootComponent::connect(CircuitComponent* c) {
                     if(getX() + getWidth() == c->getX() && c->getY() == getY() + i*(getHeight()/rowsY) && c->hasOrientation(3)){
                         std::cout << "circuit will be able to connect to this side : " << o << "with index : " << i << std::endl;
                         connectSuccesfull = true;
-                        childs[i+collums] = (AdaptedLeafComponent*)c;
+                        childs[i+getIndexOfPortOrientation(1)] = (AdaptedLeafComponent*)c;
                         
                         return;
                     }
@@ -175,7 +188,7 @@ void RNodeRootComponent::connect(CircuitComponent* c) {
                     if(getY() + getHeight() == c->getY() && c->getX() == getX() + i*(getWidth()/collumsX) && c->hasOrientation(0)){
                         std::cout << "circuit will be able to connect to this side : " << o << "with index : " << i + 2 << std::endl;
                         connectSuccesfull = true;
-                        childs[collums+rows +(collums-i-1)] = (AdaptedLeafComponent*)c;
+                        childs[getIndexOfPortOrientation(2) +(collums-i-1)] = (AdaptedLeafComponent*)c;
                         
                         return;
                     }
@@ -187,7 +200,7 @@ void RNodeRootComponent::connect(CircuitComponent* c) {
                     if(c->getX() + c->getWidth() == getX() && c->getY() == getY() + i*(getHeight()/rowsY) && c->hasOrientation(1)){
                         std::cout << "circuit will be able to connect to this side : " << o << "with index : " << i + 4 << std::endl;
                         connectSuccesfull = true;
-                        childs[collums*2+rows +(rows-i-1)] = (AdaptedLeafComponent*)c;
+                        childs[getIndexOfPortOrientation(3) +(rows-i-1)] = (AdaptedLeafComponent*)c;
                         
                         return;
                     }
@@ -594,7 +607,7 @@ mat RNodeRootComponent::calculateScatteringMatrix(double *Rp){
     
 
     auto nNullors = nullorStampIndexes.size()/4;
-    auto n = (collums+rows)*2;
+    auto n = getNumChilds();
     auto nInR = *(std::max_element(wireNodeIndexes.begin(),wireNodeIndexes.end())) + 1;
     auto nTotal = n + nInR;
     
@@ -606,12 +619,7 @@ mat RNodeRootComponent::calculateScatteringMatrix(double *Rp){
     double R_val[n];
     double G_val[n];
     
-    //auto wdfChildComp = getChildsWDFTreeNodes();
-    
     for(auto i=0; i<n; i++){
-//            wdfChildComp[i]->setParentInChildren( );
-//            wdfChildComp[i]->createPorts( );
-//            wdfChildComp[i]->adaptPorts(1.0/44100.0);
         R_val[i] = Rp[i];
         G_val[i] = 1/Rp[i];
     }
