@@ -52,6 +52,14 @@ void CircuitComponent::resized()
     getHeight(), getWidth());
 }
 
+int CircuitComponent::getCollums(){
+    return 1;
+}
+
+int CircuitComponent::getRows(){
+    return 1;
+}
+
 void CircuitComponent::mouseDown(const juce::MouseEvent& e)
 {
     lastX = getX();
@@ -94,24 +102,24 @@ void CircuitComponent::mouseDrag(const juce::MouseEvent& e)
 
 void CircuitComponent::mouseUp(const juce::MouseEvent& e)
 {
-    const int width = getWidth();
-    const int height = getHeight();
+    const int width = componentWidth;
+    const int height = componentHeight;
     const int x = getX();
     const int y = getY();
     if(x % width >= width/2){
         if(getY() % height >= height/2){
-            setBounds(x + width - x % width, y + height - y % height, width, height);
+            setBounds(x + width - x % width, y + height - y % height, width*getCollums(), height*getRows());
         }
         else{
-            setBounds(x + width - x % width, y - y % height, width, height);
+            setBounds(x + width - x % width, y - y % height, width*getCollums(), height*getRows());
         }
     }
     else{
         if(getY() % height >= height/2){
-            setBounds(x - x % width, y + height - y % height, width, height);
+            setBounds(x - x % width, y + height - y % height, width*getCollums(), height*getRows());
         }
         else{
-            setBounds(x - x % width, y - y % height, width, height);
+            setBounds(x - x % width, y - y % height, width*getCollums(), height*getRows());
         }
     }
     shooldDrag = true;
@@ -161,10 +169,4 @@ void CircuitComponent::setPropertyPanelCallback(std::function<void(CircuitCompon
     propertyPanelCallback = callbackFunction;
 }
     
-int CircuitComponent::getCollums(){
-    return 1;
-}
 
-int CircuitComponent::getRows(){
-    return 1;
-}

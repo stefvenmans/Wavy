@@ -18,6 +18,8 @@ public:
     void paint (juce::Graphics& g) override;
     void paintSVG(juce::Graphics& g);
     void resized() override;
+    virtual int getCollums();
+    virtual int getRows();
     virtual void mouseDown(const juce::MouseEvent& e) override;
     void mouseDrag(const juce::MouseEvent& e) override;
     void mouseUp(const juce::MouseEvent& e) override;
@@ -28,8 +30,6 @@ public:
     bool hasOrientation(int orientation);
     virtual ComponentType getComponentType();
     void setPropertyPanelCallback(std::function<void(CircuitComponent* c)> callbackFunction);
-    virtual int getCollums();
-    virtual int getRows();
     
 protected:
     juce::String svgFileName;
