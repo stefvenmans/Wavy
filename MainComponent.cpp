@@ -189,21 +189,21 @@ MainComponent::MainComponent()
     componentSelector.onChange = [this](){
         switch(componentSelector.getSelectedId()){
             case 1:
-                schematic.addAndMakeVisible(leafComponents.add(new Resistor_()));
+                schematic.addAndMakeVisible(leafComponents.add(new Resistor()));
                 leafComponents.getLast()->setBounds(20,20,100,100);
                 leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
                 leafComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
                 break;
                 
             case 2:
-                schematic.addAndMakeVisible(leafComponents.add(new Capacitor_()));
+                schematic.addAndMakeVisible(leafComponents.add(new Capacitor()));
                 leafComponents.getLast()->setBounds(20,20,100,100);
                 leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
                 leafComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
                 break;
                 
             case 3:
-                schematic.addAndMakeVisible(leafComponents.add(new Inverter_()));
+                schematic.addAndMakeVisible(leafComponents.add(new Inverter()));
                 leafComponents.getLast()->setBounds(20,20,100,100);
                 leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
                 leafComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
@@ -217,40 +217,40 @@ MainComponent::MainComponent()
                 break;
                 
             case 5:
-                schematic.addAndMakeVisible(leafComponents.add(new Series_()));
+                schematic.addAndMakeVisible(leafComponents.add(new Series()));
                 leafComponents.getLast()->setBounds(20,20,100,100);
                 leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
                 leafComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
                 break;
                 
             case 6:
-                schematic.addAndMakeVisible(leafComponents.add(new Parallel_()));
+                schematic.addAndMakeVisible(leafComponents.add(new Parallel()));
                 leafComponents.getLast()->setBounds(20,20,100,100);
                 leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
                 leafComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
                 break;
             case 7:
-                simpleRoot = std::make_unique<IdealVoltageSource_>();
+                simpleRoot = std::make_unique<IdealVoltageSource>();
                 schematic.addAndMakeVisible(simpleRoot.get());
                 simpleRoot->setBounds(20,20,100,100);
                 simpleRoot->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
                 simpleRoot->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
                 break;
             case 8:
-                rNode = std::make_unique<RNode_>();
+                rNode = std::make_unique<RNodeRootComponent>();
                 schematic.addAndMakeVisible(rNode.get());
                 rNode->setCentrePosition(200, 200);
                 rNode->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
                 rNode->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
                 break;
             case 9:
-                schematic.addAndMakeVisible(leafComponents.add(new VoltageSource_()));
+                schematic.addAndMakeVisible(leafComponents.add(new VoltageSource()));
                 leafComponents.getLast()->setBounds(20,20,100,100);
                 leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
                 leafComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
                 break;
             case 10:
-                simpleRoot = std::make_unique<ShortCircuit_>();
+                simpleRoot = std::make_unique<ShortCircuit>();
                 schematic.addAndMakeVisible(simpleRoot.get());
                 simpleRoot->setBounds(20,20,100,100);
                 simpleRoot->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
@@ -258,11 +258,8 @@ MainComponent::MainComponent()
                 break;
             case 11:
                 break;
-            case 12:
-                rnode = std::make_unique<RNodeNew>();
-                schematic.addAndMakeVisible(rnode.get());
-                rnode->setCentrePosition(200, 200);
-                break;
+         
+                
         }
     };
     
