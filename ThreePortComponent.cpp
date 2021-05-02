@@ -36,13 +36,7 @@ void ThreePortComponent::paint(juce::Graphics& g)
 {
     paintSVG(g);
     AdaptedLeafComponent::paint(g);
-    
-//    for(auto l : portLines){
-//        l.applyTransform(getTransform().rotated(angle, getWidth()/2, getHeight()/2));
-//        g.drawArrow(l, 1.5, 10,4);
-//
-//     }
-    
+
     g.setColour(juce::Colours::black);
     g.drawText(getName(), 20, 20, 40, 15, juce::Justification::left);
     
