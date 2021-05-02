@@ -12,7 +12,7 @@
 
 RNodeRootComponent::RNodeRootComponent() : CircuitComponent(""){
     
-    collums = 3;
+    collums = 2;
     rows = 1;
     setSize(collums*componentWidth,rows*componentHeight);
     

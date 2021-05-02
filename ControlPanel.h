@@ -1,8 +1,8 @@
 /*
   ==============================================================================
 
-    NonLinearComponent.h
-    Created: 29 Apr 2021 4:50:48pm
+    ControlPanel.h
+    Created: 2 May 2021 10:53:47am
     Author:  Stef
 
   ==============================================================================
@@ -10,12 +10,12 @@
 
 #pragma once
 #include "Config.h"
-#include "CircuitComponent.h"
 
-class NonLinearComponent : public CircuitComponent
+class ControlPanel : public juce::Component
 {
 public:
-    NonLinearComponent(juce::String svgFileName);
-    
-    
+    ControlPanel();
+    void paint (juce::Graphics& g) override;
+private:
+    std::unique_ptr<juce::Drawable> svgDrawable;
 };

@@ -16,10 +16,14 @@ class AdaptedLeafComponent : public CircuitComponent
 {
 public:
     AdaptedLeafComponent(juce::String svgFileName);
+    void paint(juce::Graphics& g) override;
     virtual wdfTreeNode* createWDFComponent();
     virtual wdfTreeNode* getWDFComponent();
     
 protected:
     std::unique_ptr<wdfTreeNode> treeNode;
-    bool isAdapted = true;
+    std::vector<juce::Line<float>> portArrowsA;
+    std::vector<juce::Line<float>> portArrowsB;
+    std::vector<bool> isAdapted;
+    //bool isAdapted = true;
 };

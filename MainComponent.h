@@ -26,6 +26,7 @@
 #include "FrontPanel.h"
 #include "Schematic.h"
 #include "PropertyPanel.h"
+#include "ControlPanel.h"
 
 class NonLinearComponent : public CircuitComponent
 {
@@ -91,16 +92,19 @@ private:
     juce::TextButton showLibraryButton;
     juce::TextButton calculateMatButton;
     juce::TextButton calculateRaw;
+    juce::TextButton runSimulationButton;
+    bool runSimulation = false;
     
     juce::Viewport viewPort;
     //juce::BlockField blockField;
-    
-   
     
     
     PropertyPanel propertyPanel;
     juce::Viewport propertyPanelViewPort;
     bool propertyPanelShowHide = false;
+    
+    ControlPanel controlPanel;
+    
     
     void setOutput(CircuitComponent* c);
     void setInput(CircuitComponent* c);

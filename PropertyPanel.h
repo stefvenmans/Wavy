@@ -41,12 +41,20 @@ public:
     
 private:
     juce::Label componentName;
-    juce::Label prop1;
-    juce::Label prop2;
+    juce::Label componentNameText;
+    juce::Label componentType;
+    juce::Label componentValue1;
+    juce::Label componentValue1Text;
+    juce::Label componentValue2;
+    juce::Label componentValue2Text;
+    juce::Label setOutputText;
+    juce::Label setInputText;
+    juce::Label setControlText;
     CircuitComponent* componentLastSelected = nullptr;
     juce::ToggleButton setOutput;
     juce::ToggleButton setInput;
     juce::TextButton addNullorButton;
     std::function<void(CircuitComponent* c)> setOutputOfCircuit;
     std::function<void(CircuitComponent* c)> setInputOfCircuit;
+    juce::OwnedArray<juce::Rectangle<float>> textBoxes;
 };

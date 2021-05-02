@@ -169,4 +169,11 @@ void CircuitComponent::setPropertyPanelCallback(std::function<void(CircuitCompon
     propertyPanelCallback = callbackFunction;
 }
     
+juce::String CircuitComponent::getName(){
+    return componentName;
+}
 
+void CircuitComponent::setName(juce::String name){
+    componentName = name;
+    repaint();
+}

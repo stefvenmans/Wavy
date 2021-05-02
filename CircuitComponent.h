@@ -30,9 +30,12 @@ public:
     bool hasOrientation(int orientation);
     virtual ComponentType getComponentType();
     void setPropertyPanelCallback(std::function<void(CircuitComponent* c)> callbackFunction);
+    juce::String getName();
+    void setName(juce::String);
     
 protected:
     juce::String svgFileName;
+    juce::String componentName;
     std::unique_ptr<juce::Drawable> svgDrawable;
     juce::ComponentBoundsConstrainer constrainer;
     juce::ComponentDragger dragger;

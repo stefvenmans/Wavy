@@ -13,6 +13,8 @@ MainComponent::MainComponent()
     
     //GUI
     
+    addAndMakeVisible(controlPanel);
+    
     //TODO: set size in settings window
     addAndMakeVisible(schematic);
     schematic.centreWithSize(820*5, 580*5);
@@ -115,6 +117,7 @@ MainComponent::MainComponent()
         switch(componentSelector.getSelectedId()){
             case 1:
                 schematic.addAndMakeVisible(leafComponents.add(new Resistor()));
+                leafComponents.getLast()->setName("R1");
                 leafComponents.getLast()->setBounds(20,20,100,100);
                 leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
                 leafComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
@@ -122,6 +125,7 @@ MainComponent::MainComponent()
                 
             case 2:
                 schematic.addAndMakeVisible(leafComponents.add(new Capacitor()));
+                leafComponents.getLast()->setName("C1");
                 leafComponents.getLast()->setBounds(20,20,100,100);
                 leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
                 leafComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
@@ -129,6 +133,7 @@ MainComponent::MainComponent()
                 
             case 3:
                 schematic.addAndMakeVisible(leafComponents.add(new Inverter()));
+                leafComponents.getLast()->setName("I1");
                 leafComponents.getLast()->setBounds(20,20,100,100);
                 leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
                 leafComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
@@ -136,6 +141,7 @@ MainComponent::MainComponent()
                 
             case 4:
                 schematic.addAndMakeVisible(leafComponents.add(new YParameterAmp()));
+                leafComponents.getLast()->setName("y-1");
                 leafComponents.getLast()->setBounds(20,20,200,100);
                 leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
                 leafComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
@@ -143,6 +149,7 @@ MainComponent::MainComponent()
                 
             case 5:
                 schematic.addAndMakeVisible(leafComponents.add(new Series()));
+                leafComponents.getLast()->setName("S1");
                 leafComponents.getLast()->setBounds(20,20,100,100);
                 leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
                 leafComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
@@ -150,12 +157,14 @@ MainComponent::MainComponent()
                 
             case 6:
                 schematic.addAndMakeVisible(leafComponents.add(new Parallel()));
+                leafComponents.getLast()->setName("P1");
                 leafComponents.getLast()->setBounds(20,20,100,100);
                 leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
                 leafComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
                 break;
             case 7:
                 simpleRoot = std::make_unique<IdealVoltageSource>();
+                simpleRoot->setName("V1");
                 schematic.addAndMakeVisible(simpleRoot.get());
                 simpleRoot->setBounds(20,20,100,100);
                 simpleRoot->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
@@ -170,12 +179,14 @@ MainComponent::MainComponent()
                 break;
             case 9:
                 schematic.addAndMakeVisible(leafComponents.add(new VoltageSource()));
+                leafComponents.getLast()->setName("V1");
                 leafComponents.getLast()->setBounds(20,20,100,100);
                 leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
                 leafComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
                 break;
             case 10:
                 simpleRoot = std::make_unique<ShortCircuit>();
+                simpleRoot->setName("Shrt1");
                 schematic.addAndMakeVisible(simpleRoot.get());
                 simpleRoot->setBounds(20,20,100,100);
                 simpleRoot->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
@@ -252,6 +263,15 @@ MainComponent::MainComponent()
             
         }
     };
+    
+    addAndMakeVisible(runSimulationButton);
+    runSimulationButton.onClick = [this](){
+        runSimulation = !runSimulation;
+        (runSimulation) ? (std::cout << "Running") : (std::cout << "Not running") ;
+        std::cout << std::endl;
+    };
+    runSimulationButton.setButtonText("Run");
+
 
     // Some platforms require permissions to open input channels so request that here
     if (juce::RuntimePermissions::isRequired (juce::RuntimePermissions::recordAudio)
@@ -373,7 +393,36 @@ void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& buffe
 
     // Right now we are not producing any data, in which case we need to clear the buffer
     // (to prevent the output of random noise)
-    bufferToFill.clearActiveBufferRegion();
+    for(auto j=0; j<bufferToFill.buffer->getNumChannels() ; j++){
+        auto bufferIn = bufferToFill.buffer->getReadPointer(j);
+        auto bufferOut = bufferToFill.buffer->getWritePointer(j);
+        if(runSimulation){
+            
+            for(auto i=0; i<bufferToFill.numSamples ;i++){
+                
+                    //output[i] = wdf->getOutputValue();
+                    
+                    if(inputIndex != -1 && inputIndex < leafComponents.size()){
+                        ((wdfTerminatedResVSource*)(leafComponents[inputIndex]->getWDFComponent()))->Vs = bufferIn[i];
+                    }
+                    wdfEnvironment.cycleWave();
+                    
+                    if(outputIndex != -1 && outputIndex < leafComponents.size()){
+                        //std::cout << -leafComponents[outputIndex]->getWDFComponent()->upPort->getPortVoltage() << std::endl;
+                        bufferOut[i] = -leafComponents[outputIndex]->getWDFComponent()->upPort->getPortVoltage();
+            //        std::cout << wdf->getOutputValue() << std::endl;
+            //        std::cout << input[i] << std::endl;
+                    }
+                }
+        }
+        else {
+            for(auto i=0; i<bufferToFill.numSamples ;i++){
+                bufferOut[i] = bufferIn[i];
+            }
+        }
+    }
+    
+    //bufferToFill.clearActiveBufferRegion();
 }
 
 void MainComponent::releaseResources()
@@ -448,12 +497,13 @@ void MainComponent::resized()
     auto stepX = getWidth()/numX;
     auto stepY = getHeight()/numY;
     
-    textButton.setBounds(getWidth()-200,40,50,50);
-    showLibraryButton.setBounds(getWidth()-200,40*2+80,50,50);
+    textButton.setBounds(getWidth()-350,40,50,50);
+    showLibraryButton.setBounds(getWidth()-350,40*2+80,50,50);
     //res1Slider.setBounds(680,40,80,200);
-    componentSelector.setBounds(getWidth()-200,40+80,100,30);
-    calculateMatButton.setBounds(getWidth()-200,40*2+80+60,50,50);
-    calculateRaw.setBounds(getWidth()-200, 40*2+80+60+70, 50, 50);
+    componentSelector.setBounds(getWidth()-350,40+80,100,30);
+    calculateMatButton.setBounds(getWidth()-350,40*2+80+60,50,50);
+    calculateRaw.setBounds(getWidth()-350, 40*2+80+60+70, 50, 50);
+    runSimulationButton.setBounds(getWidth()-350, 40*2+80+60+70+ 60, 50, 50);
     
 //    for (auto x = 0; x < numX; ++x)
 //        {
@@ -468,8 +518,8 @@ void MainComponent::resized()
 //        }
     
     
-    
-    frontPanel.setBounds(0,getHeight()-160,getWidth(),580-420);
+    controlPanel.setBounds(0, getHeight()-30, getWidth(), 30);
+    frontPanel.setBounds(0,getHeight()-160,getWidth(),580-420 - 30);
     
     if(propertyPanelShowHide){
         viewPort.setBounds(0, 0, getWidth()-250, getHeight()-160);

@@ -16,6 +16,10 @@ VoltageSource::VoltageSource() : OnePortComponent("vol.svg")
     Rs = 1;
 }
 
+void VoltageSource::paint(juce::Graphics& g){
+    OnePortComponent::paint(g);
+}
+
 wdfTreeNode* VoltageSource::createWDFComponent() {
     treeNode.reset(new wdfTerminatedResVSource(Vs,Rs));
     return treeNode.get();

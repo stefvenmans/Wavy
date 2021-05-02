@@ -15,6 +15,7 @@ class VoltageSource : public OnePortComponent
 {
 public:
     VoltageSource();
+    void paint(juce::Graphics& g) override;
     wdfTreeNode* createWDFComponent() override;
     ComponentType getComponentType() override;
     void setVs(double newVs);
