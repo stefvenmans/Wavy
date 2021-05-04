@@ -22,16 +22,18 @@
 #include "IdealVoltageSource.h"
 #include "ShortCircuit.h"
 #include "RNodeRootComponent.h"
+#include "NonLinearComponent.h"
+#include "Diode.h"
+#include "Transistor.h"
+#include "RNodeNonLinRootComponent.h"
 
 #include "FrontPanel.h"
 #include "Schematic.h"
 #include "PropertyPanel.h"
 #include "ControlPanel.h"
 
-class NonLinearComponent : public CircuitComponent
-{
-    
-};
+
+
 
 //==============================================================================
 /*
@@ -85,9 +87,10 @@ private:
     //DraggableComp draggableComp;
     juce::OwnedArray<juce::Component> components;
     juce::OwnedArray<AdaptedLeafComponent> leafComponents;
+    juce::OwnedArray<NonLinearComponent> nonLinearComponents;
     
     juce::TextButton textButton;
-    juce::Slider res1Slider;
+    juce::Slider freqSlider;
     juce::ComboBox componentSelector;
     juce::TextButton showLibraryButton;
     juce::TextButton calculateMatButton;
@@ -121,6 +124,7 @@ private:
     
     std::unique_ptr<SimpleRootComponent> simpleRoot;
     std::unique_ptr<RNodeRootComponent> rNode;
+    std::unique_ptr<RNodeNonLinRootComponent> rNodeRootNonLin;
     
     
     juce::AudioFormatManager formatManager;
@@ -131,6 +135,7 @@ private:
     mat Smat;
     //Smat.set_size(6, 6);
 
+    juce::dsp::Oscillator<float> osc {[](float x) {return std::sin(x);}};
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };
 

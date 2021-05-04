@@ -1,26 +1,26 @@
 /*
   ==============================================================================
 
-    RNodeRootComponent.cpp
-    Created: 29 Apr 2021 4:50:18pm
+    RNodeNonLinRootComponent.cpp
+    Created: 2 May 2021 10:02:16pm
     Author:  Stef
 
   ==============================================================================
 */
 
-#include "RNodeRootComponent.h"
+#include "RNodeNonLinRootComponent.h"
 
-RNodeRootComponent::RNodeRootComponent() : CircuitComponent(""){
+RNodeNonLinRootComponent::RNodeNonLinRootComponent() : CircuitComponent(""){
     
     collums = 2;
-    rows = 2;
+    rows = 1;
     setSize(collums*componentWidth,rows*componentHeight);
     
     //North
     for(auto i=0; i<collums; i++){
         portOrientations.push_back(0);
         isConnected.push_back(false);
-        childs.push_back(nullptr);
+        roots.push_back(nullptr);
         //Create connection points
         for(auto j=0; j<2 ; j++){
             gridSize = (getWidth()-2*borderOffset)/(collums*2-1);
@@ -30,34 +30,34 @@ RNodeRootComponent::RNodeRootComponent() : CircuitComponent(""){
         }
     }
     //East
-//    for(auto i=0; i<rows; i++){
-//        portOrientations.push_back(1);
-//        isConnected.push_back(false);
-//        childs.push_back(nullptr);
-//        //Create connection points
-//        for(auto j=0; j<2 ; j++){
-//            gridSize = (getHeight()-2*borderOffset)/(rows*2-1);
-//            portConnectionPoints.add(new juce::Point<float>(getWidth()-11,getYGrid(borderOffset+j*gridSize + i*componentHeight)));
-//            resistorStampIndexes.push_back(-1);
-//            voltageSourceStampIndexes.push_back(-1);
-//        }
-//
-//    }
-    //South
-    for(auto i=0; i<collums; i++){
-        portOrientations.push_back(2);
+    for(auto i=0; i<rows; i++){
+        portOrientations.push_back(1);
         isConnected.push_back(false);
         childs.push_back(nullptr);
         //Create connection points
         for(auto j=0; j<2 ; j++){
-            gridSize = (getWidth()-2*borderOffset)/(collums*2-1);
-            std::cout << " ! " << borderOffset+(collums*2-1-j)*gridSize << std::endl;
-            portConnectionPoints.add(new juce::Point<float>(getXGrid(borderOffset+(collums*2-1-j)*gridSize - i*componentWidth),getHeight()-11));
+            gridSize = (getHeight()-2*borderOffset)/(rows*2-1);
+            portConnectionPoints.add(new juce::Point<float>(getWidth()-11,getYGrid(borderOffset+j*gridSize + i*componentHeight)));
             resistorStampIndexes.push_back(-1);
             voltageSourceStampIndexes.push_back(-1);
         }
 
     }
+    //South
+//    for(auto i=0; i<collums; i++){
+//        portOrientations.push_back(2);
+//        isConnected.push_back(false);
+//        childs.push_back(nullptr);
+//        //Create connection points
+//        for(auto j=0; j<2 ; j++){
+//            gridSize = (getWidth()-2*borderOffset)/(collums*2-1);
+//            std::cout << " ! " << borderOffset+(collums*2-1-j)*gridSize << std::endl;
+//            portConnectionPoints.add(new juce::Point<float>(getXGrid(borderOffset+(collums*2-1-j)*gridSize - i*componentWidth),getHeight()-11));
+//            resistorStampIndexes.push_back(-1);
+//            voltageSourceStampIndexes.push_back(-1);
+//        }
+//
+//    }
     //West
     for(auto i=0; i<rows; i++){
         portOrientations.push_back(3);
@@ -79,7 +79,7 @@ RNodeRootComponent::RNodeRootComponent() : CircuitComponent(""){
     
 }
 
-void RNodeRootComponent::paint (juce::Graphics& g)
+void RNodeNonLinRootComponent::paint (juce::Graphics& g)
 {
     //g.fillAll(juce::Colours::white);
     if(rotate){
@@ -116,7 +116,7 @@ void RNodeRootComponent::paint (juce::Graphics& g)
     g.drawRect(10,10,collums*100-20,rows*100-20,2);
 }
 
-int RNodeRootComponent::getIndexOfPortOrientation(int o){
+int RNodeNonLinRootComponent::getIndexOfPortOrientation(int o){
     std::vector<int>::iterator it = std::find(portOrientations.begin(), portOrientations.end(), o);
     if (it != portOrientations.end()){
         return std::distance(portOrientations.begin(), it);
@@ -126,7 +126,7 @@ int RNodeRootComponent::getIndexOfPortOrientation(int o){
     }
 }
 
-void RNodeRootComponent::connect(CircuitComponent* c) {
+void RNodeNonLinRootComponent::connect(CircuitComponent* c) {
     //Check if at right side
     auto index = 0;
     bool connectSuccesfull = false;
@@ -136,11 +136,13 @@ void RNodeRootComponent::connect(CircuitComponent* c) {
                 //Check if component is above + has orientation 2
                 for(auto i=0 ; i<collums; i++){
                     if(c->getY() + c->getHeight() == getY() && c->getX() == getX() + i*(getWidth()/collums) && c->hasOrientation(2)){
-                        std::cout << "circuit will be able to connect to this side : " << o << "with index : " << i << std::endl;
-                        connectSuccesfull = true;
-                        childs[i] = (AdaptedLeafComponent*)c;
-        
-                        return;
+                        if(isRootOrNonLin() == 2){
+                            std::cout << "circuit will be able to connect to this side : " << o << "with index : " << i << std::endl;
+                            connectSuccesfull = true;
+                            roots[i] = (NonLinearComponent*)c;
+            
+                            return;
+                        }
                     }
                 }
                 break;
@@ -193,10 +195,10 @@ void RNodeRootComponent::connect(CircuitComponent* c) {
     }
 }
 
-int RNodeRootComponent::getCollums(){
+int RNodeNonLinRootComponent::getCollums(){
     return collums;
 }
-int RNodeRootComponent::getRows(){
+int RNodeNonLinRootComponent::getRows(){
     return rows;
 }
 
@@ -212,11 +214,11 @@ int RNodeRootComponent::getRows(){
 //        return root.get();
 //    }
 
-int RNodeRootComponent::getNumChilds(){
+int RNodeNonLinRootComponent::getNumChilds(){
     return childs.size();
 }
 
-std::vector<wdfTreeNode*> RNodeRootComponent::getChildsWDFTreeNodes (){
+std::vector<wdfTreeNode*> RNodeNonLinRootComponent::getChildsWDFTreeNodes (){
     std::vector<wdfTreeNode*> childsWDFTreeNodes;
     for(auto c : childs){
         childsWDFTreeNodes.push_back(c->createWDFComponent());
@@ -224,12 +226,12 @@ std::vector<wdfTreeNode*> RNodeRootComponent::getChildsWDFTreeNodes (){
     return childsWDFTreeNodes;
 }
 
-void RNodeRootComponent::mouseDoubleClick(const juce::MouseEvent & e){
+void RNodeNonLinRootComponent::mouseDoubleClick(const juce::MouseEvent & e){
     nodeDrawView = !nodeDrawView;
     repaint();
 }
 
-void RNodeRootComponent::mouseDown(const juce::MouseEvent &e){
+void RNodeNonLinRootComponent::mouseDown(const juce::MouseEvent &e){
     if(nodeDrawView != true){
         isDragging = true;
         this->CircuitComponent::mouseDown(e);
@@ -244,27 +246,26 @@ void RNodeRootComponent::mouseDown(const juce::MouseEvent &e){
                 
                 switch(nullorNodeSelectionState){
                     case I:
-                        nullorStampIndexes[0+lastSelectedNullor*4] = wireNodeIndexes[wires.indexOf(w)];
+                        nullorStampIndexes[0] = wireNodeIndexes[wires.indexOf(w)];
                         std::cout << "I set : " << wireNodeIndexes[wires.indexOf(w)] << std::endl;
                         nullorNodeSelectionState = J;
                         break;
                     case J:
-                        nullorStampIndexes[1+lastSelectedNullor*4] = wireNodeIndexes[wires.indexOf(w)];
+                        nullorStampIndexes[1] = wireNodeIndexes[wires.indexOf(w)];
                         std::cout << "J set : " << wireNodeIndexes[wires.indexOf(w)] << std::endl;
                         nullorNodeSelectionState = K;
                         break;
                     case K:
-                        nullorStampIndexes[2+lastSelectedNullor*4] = wireNodeIndexes[wires.indexOf(w)];
+                        nullorStampIndexes[2] = wireNodeIndexes[wires.indexOf(w)];
                         std::cout << "K set : " << wireNodeIndexes[wires.indexOf(w)] << std::endl;
                         nullorNodeSelectionState = L;
                         break;
                     case L:
-                        nullorStampIndexes[3+lastSelectedNullor*4] = wireNodeIndexes[wires.indexOf(w)];
+                        nullorStampIndexes[3] = wireNodeIndexes[wires.indexOf(w)];
                         std::cout << "L set : " << wireNodeIndexes[wires.indexOf(w)] << std::endl;
                         nullorNodeSelectionState = I;
                         break;
                 }
-                propertyPanelCallback(this);
                 return;
             }
         }
@@ -278,22 +279,22 @@ void RNodeRootComponent::mouseDown(const juce::MouseEvent &e){
                             resistorStampIndexes[portConnectionPoints.indexOf(p)] = numberOfNodes;
                             switch(nullorNodeSelectionState){
                                 case I:
-                                    nullorStampIndexes[0+lastSelectedNullor*4] = numberOfNodes;
+                                    nullorStampIndexes[0] = numberOfNodes;
                                     std::cout << "I set : " << numberOfNodes << std::endl;
                                     nullorNodeSelectionState = J;
                                     break;
                                 case J:
-                                    nullorStampIndexes[1+lastSelectedNullor*4] = numberOfNodes;
+                                    nullorStampIndexes[1] = numberOfNodes;
                                     std::cout << "J set : " << numberOfNodes << std::endl;
                                     nullorNodeSelectionState = K;
                                     break;
                                 case K:
-                                    nullorStampIndexes[2+lastSelectedNullor*4] = numberOfNodes;
+                                    nullorStampIndexes[2] = numberOfNodes;
                                     std::cout << "K set : " << numberOfNodes << std::endl;
                                     nullorNodeSelectionState = L;
                                     break;
                                 case L:
-                                    nullorStampIndexes[3+lastSelectedNullor*4] = numberOfNodes;
+                                    nullorStampIndexes[3] = numberOfNodes;
                                     std::cout << "L set : " << numberOfNodes << std::endl;
                                     nullorNodeSelectionState = I;
                                     break;
@@ -301,7 +302,6 @@ void RNodeRootComponent::mouseDown(const juce::MouseEvent &e){
                             
                             wireNodeIndexes.push_back(numberOfNodes);
                             numberOfNodes++;
-                            propertyPanelCallback(this);
                         }
                     }
                     else { // Add voltage source stamp
@@ -309,29 +309,28 @@ void RNodeRootComponent::mouseDown(const juce::MouseEvent &e){
                             voltageSourceStampIndexes[portConnectionPoints.indexOf(p)] = numberOfNodes;
                             switch(nullorNodeSelectionState){
                                 case I:
-                                    nullorStampIndexes[0+lastSelectedNullor*4] = numberOfNodes;
+                                    nullorStampIndexes[0] = numberOfNodes;
                                     std::cout << "I set : " << numberOfNodes << std::endl;
                                     nullorNodeSelectionState = J;
                                     break;
                                 case J:
-                                    nullorStampIndexes[1+lastSelectedNullor*4] = numberOfNodes;
+                                    nullorStampIndexes[1] = numberOfNodes;
                                     std::cout << "J set : " << numberOfNodes << std::endl;
                                     nullorNodeSelectionState = K;
                                     break;
                                 case K:
-                                    nullorStampIndexes[2+lastSelectedNullor*4] = numberOfNodes;
+                                    nullorStampIndexes[2] = numberOfNodes;
                                     std::cout << "K set : " << numberOfNodes << std::endl;
                                     nullorNodeSelectionState = L;
                                     break;
                                 case L:
-                                    nullorStampIndexes[3+lastSelectedNullor*4] = numberOfNodes;
+                                    nullorStampIndexes[3] = numberOfNodes;
                                     std::cout << "L set : " << numberOfNodes << std::endl;
                                     nullorNodeSelectionState = I;
                                     break;
                             }
                             wireNodeIndexes.push_back(numberOfNodes);
                             numberOfNodes++;
-                            propertyPanelCallback(this);
                         }
                         
                     }
@@ -422,12 +421,12 @@ void RNodeRootComponent::mouseDown(const juce::MouseEvent &e){
     }
 }
 
-void RNodeRootComponent::mouseDrag(const juce::MouseEvent& e) {
+void RNodeNonLinRootComponent::mouseDrag(const juce::MouseEvent& e) {
     if(isDragging){
         this->CircuitComponent::mouseDrag(e);
     }
 }
-void RNodeRootComponent::mouseUp(const juce::MouseEvent& e) {
+void RNodeNonLinRootComponent::mouseUp(const juce::MouseEvent& e) {
     if(isDragging){
         this->CircuitComponent::mouseUp(e);
         isDragging = false;
@@ -436,7 +435,7 @@ void RNodeRootComponent::mouseUp(const juce::MouseEvent& e) {
     repaint();
 }
 
-void RNodeRootComponent::mouseMove(const juce::MouseEvent& e) {
+void RNodeNonLinRootComponent::mouseMove(const juce::MouseEvent& e) {
     if(isDrawingWire){
         auto x = getXGrid(e.getPosition().getX());
         auto y = getYGrid(e.getPosition().getY());
@@ -445,7 +444,7 @@ void RNodeRootComponent::mouseMove(const juce::MouseEvent& e) {
     }
 }
 
-int RNodeRootComponent::getXGrid(int x){
+int RNodeNonLinRootComponent::getXGrid(int x){
     gridSize = (getWidth()-2*borderOffset)/(collums*2-1);
     //Check limits
     if(x<=borderOffset){
@@ -477,7 +476,7 @@ int RNodeRootComponent::getXGrid(int x){
     return x;
 }
 
-int RNodeRootComponent::getYGrid(int y){
+int RNodeNonLinRootComponent::getYGrid(int y){
     gridSize = (getHeight()-2*borderOffset)/(rows*2-1);
     //Check limits
     if(y<=borderOffset){
@@ -505,7 +504,7 @@ int RNodeRootComponent::getYGrid(int y){
     return y;
 }
 
-mat RNodeRootComponent::calculateScatteringMatrix(){
+mat RNodeNonLinRootComponent::calculateScatteringMatrix(){
     if(wireNodeIndexes.size() == 0) return nullptr;
     
     auto n = (collums+rows)*2;
@@ -579,7 +578,7 @@ mat RNodeRootComponent::calculateScatteringMatrix(){
     return S;
 }
 
-mat RNodeRootComponent::calculateScatteringMatrix(double *Rp){
+mat RNodeNonLinRootComponent::calculateScatteringMatrix(double *Rp){
     if(wireNodeIndexes.size() == 0) return nullptr;
     
 
@@ -668,24 +667,15 @@ mat RNodeRootComponent::calculateScatteringMatrix(double *Rp){
     return S;
 }
 
-void RNodeRootComponent::createNullorStamps(){
+void RNodeNonLinRootComponent::createNullorStamps(){
     isCreatingNullor = true;
     for(auto i=0; i<4; i++){
         nullorStampIndexes.push_back(-1);
     }
     nullorNodeSelectionState = I;
-    lastSelectedNullor = nullorStampIndexes.size()/4-1;
 }
 
-std::vector<int> RNodeRootComponent::getNullorStampIndexes(){
-    return nullorStampIndexes;
-}
-
-void RNodeRootComponent::setLastSelectedNullor(int i){
-    lastSelectedNullor = i;
-}
-
-ComponentType RNodeRootComponent::getComponentType() {
+ComponentType RNodeNonLinRootComponent::getComponentType() {
     return ComponentType::R_RNODE;
 }
 

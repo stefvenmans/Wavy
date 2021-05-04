@@ -1,20 +1,20 @@
 /*
   ==============================================================================
 
-    NonLinearComponent.cpp
-    Created: 29 Apr 2021 4:50:48pm
+    Transistor.h
+    Created: 2 May 2021 8:52:18pm
     Author:  Stef
 
   ==============================================================================
 */
 
+#pragma once
 #include "NonLinearComponent.h"
 
-NonLinearComponent::NonLinearComponent(juce::String svgFileName) : CircuitComponent(svgFileName)
+class Transistor : public NonLinearComponent
 {
-    
-}
-
-int NonLinearComponent::isRootOrNonLin(){
-    return 2;
-}
+public:
+    Transistor();
+    void paint (juce::Graphics& g) override;
+    int getCollums() override;
+};

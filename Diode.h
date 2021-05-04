@@ -1,20 +1,19 @@
 /*
   ==============================================================================
 
-    NonLinearComponent.cpp
-    Created: 29 Apr 2021 4:50:48pm
+    Diode.h
+    Created: 2 May 2021 6:51:06pm
     Author:  Stef
 
   ==============================================================================
 */
 
+#pragma once
 #include "NonLinearComponent.h"
 
-NonLinearComponent::NonLinearComponent(juce::String svgFileName) : CircuitComponent(svgFileName)
+class Diode : public NonLinearComponent
 {
-    
-}
-
-int NonLinearComponent::isRootOrNonLin(){
-    return 2;
-}
+public:
+    Diode();
+    void connect(CircuitComponent* c) override ;
+};

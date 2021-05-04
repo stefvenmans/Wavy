@@ -111,6 +111,9 @@ MainComponent::MainComponent()
     componentSelector.addItem("Short Circuit",10);
     componentSelector.addItem("-",11);
     componentSelector.addItem("Old R Node", 12);
+    componentSelector.addItem("Diode", 13);
+    componentSelector.addItem("Transistor",14);
+    componentSelector.addItem("R Node Non Lin", 15);
     addAndMakeVisible(componentSelector);
     
     componentSelector.onChange = [this](){
@@ -194,8 +197,28 @@ MainComponent::MainComponent()
                 break;
             case 11:
                 break;
-         
-                
+            case 13:
+                schematic.addAndMakeVisible(nonLinearComponents.add(new Diode()));
+                nonLinearComponents.getLast()->setName("D1");
+                nonLinearComponents.getLast()->setBounds(20,20,100,100);
+                nonLinearComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
+                nonLinearComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
+                break;
+            case 14:
+                schematic.addAndMakeVisible(nonLinearComponents.add(new Transistor()));
+                nonLinearComponents.getLast()->setName("Q1");
+                nonLinearComponents.getLast()->setBounds(20,20,200,100);
+                nonLinearComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
+                nonLinearComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
+                break;
+            case 15:
+                rNodeRootNonLin = std::make_unique<RNodeNonLinRootComponent>();
+                rNodeRootNonLin->setName("Rn");
+                schematic.addAndMakeVisible(rNodeRootNonLin.get());
+                rNodeRootNonLin->setCentrePosition(200, 200);
+                rNodeRootNonLin->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
+                rNodeRootNonLin->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
+                break;
         }
     };
     
@@ -209,10 +232,13 @@ MainComponent::MainComponent()
     res1Val.lowLim = 1e-3;
     res1Val.highLim = 1e4;
     
-    res1Slider.setRange(res1Val.lowLim, res1Val.highLim);
-    res1Slider.setSliderStyle(juce::Slider::SliderStyle::LinearVertical);
-    res1Slider.setValue(res1Val.value);
-    addAndMakeVisible(res1Slider);
+    freqSlider.setRange(100, 2000);
+    freqSlider.setSliderStyle(juce::Slider::SliderStyle::LinearVertical);
+    freqSlider.setValue(440);
+    addAndMakeVisible(freqSlider);
+    freqSlider.onDragEnd = [this](){
+        osc.setFrequency(freqSlider.getValue());
+    };
     
     wdfEnvironment.addParam(res1Val);
     
@@ -283,6 +309,7 @@ MainComponent::MainComponent()
     else
     {
         // Specify the number of input and output channels that we want to open
+        
         setAudioChannels (2, 2);
     }
 }
@@ -355,6 +382,30 @@ bool MainComponent::wantsToConnect_(CircuitComponent* c)
             }
         }
     }
+    
+    if(rNodeRootNonLin != nullptr && c!=simpleRoot.get() && c!=rNode.get()){
+        
+        
+        for(auto i=0; i<rNodeRootNonLin->getCollums(); i++){
+            for(auto j=0; j<rNodeRootNonLin->getRows(); j++){
+                auto iX = rNodeRootNonLin.get()->getX() + (rNodeRootNonLin.get()->getWidth()/rNodeRootNonLin->getCollums())*(i);
+                auto iY = rNodeRootNonLin.get()->getY() + (rNodeRootNonLin.get()->getHeight()/rNodeRootNonLin->getRows())*(j);
+                auto iW = rNodeRootNonLin.get()->getWidth();
+                auto iH = rNodeRootNonLin.get()->getHeight();
+                
+                if(((iX+iW)==cX && iY==cY) || ((iY+iH)==cY && iX==cX) || ((cX+cW)==iX && cY==iY) || ((cY+cH)==iY && cX==iX)){
+                    std::cout << "a r node root want could connect to this component" << std::endl;
+                    
+                    c->connect(rNodeRootNonLin.get());
+                    rNodeRootNonLin->connect(c);
+                    
+                    c->repaint();
+                    rNodeRootNonLin->repaint();
+                }
+            }
+        }
+    }
+    
 }
 
 void MainComponent::setOutput(CircuitComponent* c){
@@ -383,6 +434,15 @@ void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRat
     // but be careful - it will be called on the audio thread, not the GUI thread.
 
     // For more details, see the help for AudioProcessor::prepareToPlay()
+    
+    juce::dsp::ProcessSpec spec;
+    spec.maximumBlockSize = samplesPerBlockExpected;
+    spec.sampleRate = sampleRate;
+    spec.numChannels = 2;
+    
+    osc.prepare(spec);
+    
+    std::cout << "samples per block" << samplesPerBlockExpected << std::endl;
 }
 
 void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& bufferToFill)
@@ -393,7 +453,9 @@ void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& buffe
 
     // Right now we are not producing any data, in which case we need to clear the buffer
     // (to prevent the output of random noise)
-    for(auto j=0; j<bufferToFill.buffer->getNumChannels() ; j++){
+    bufferToFill.clearActiveBufferRegion();
+    //for(auto j=0; j<bufferToFill.buffer->getNumChannels() ; j++){
+    for(auto j=0; j<1 ; j++){
         auto bufferIn = bufferToFill.buffer->getReadPointer(j);
         auto bufferOut = bufferToFill.buffer->getWritePointer(j);
         if(runSimulation){
@@ -403,7 +465,7 @@ void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& buffe
                     //output[i] = wdf->getOutputValue();
                     
                     if(inputIndex != -1 && inputIndex < leafComponents.size()){
-                        ((wdfTerminatedResVSource*)(leafComponents[inputIndex]->getWDFComponent()))->Vs = bufferIn[i];
+                        ((wdfTerminatedResVSource*)(leafComponents[inputIndex]->getWDFComponent()))->Vs = 0.1*osc.processSample( 0);//bufferIn[i];
                     }
                     wdfEnvironment.cycleWave();
                     
@@ -416,8 +478,9 @@ void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& buffe
                 }
         }
         else {
+            
             for(auto i=0; i<bufferToFill.numSamples ;i++){
-                bufferOut[i] = bufferIn[i];
+                bufferOut[i] = 0.1*osc.processSample( 0);
             }
         }
     }
@@ -499,7 +562,7 @@ void MainComponent::resized()
     
     textButton.setBounds(getWidth()-350,40,50,50);
     showLibraryButton.setBounds(getWidth()-350,40*2+80,50,50);
-    //res1Slider.setBounds(680,40,80,200);
+    freqSlider.setBounds(680,40,80,200);
     componentSelector.setBounds(getWidth()-350,40+80,100,30);
     calculateMatButton.setBounds(getWidth()-350,40*2+80+60,50,50);
     calculateRaw.setBounds(getWidth()-350, 40*2+80+60+70, 50, 50);

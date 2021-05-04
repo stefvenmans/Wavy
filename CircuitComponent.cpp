@@ -25,7 +25,7 @@ CircuitComponent::CircuitComponent(juce::String svgFileName) : svgFileName{svgFi
 
 void CircuitComponent::paint (juce::Graphics& g)
 {
-    g.fillAll(juce::Colours::white);
+    //g.fillAll(juce::Colours::white);
     if(rotate){
         angle += juce::MathConstants<float>::halfPi;
         if(angle >= juce::MathConstants<float>::twoPi) angle = 0;
@@ -176,4 +176,10 @@ juce::String CircuitComponent::getName(){
 void CircuitComponent::setName(juce::String name){
     componentName = name;
     repaint();
+}
+
+
+//0 for leaf, 1 for simple root, 2 for non-lin root
+int CircuitComponent::isRootOrNonLin(){
+    return -1;
 }

@@ -50,6 +50,8 @@ private:
     juce::Label setOutputText;
     juce::Label setInputText;
     juce::Label setControlText;
+    juce::OwnedArray<juce::Label> rnodeNullorStamp;
+    juce::ComboBox rnodeNullorComboBox;
     CircuitComponent* componentLastSelected = nullptr;
     juce::ToggleButton setOutput;
     juce::ToggleButton setInput;

@@ -16,6 +16,7 @@ class NonLinearComponent : public CircuitComponent
 {
 public:
     NonLinearComponent(juce::String svgFileName);
+    int isRootOrNonLin() override; 
     
     
 };

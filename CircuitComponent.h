@@ -32,6 +32,7 @@ public:
     void setPropertyPanelCallback(std::function<void(CircuitComponent* c)> callbackFunction);
     juce::String getName();
     void setName(juce::String);
+    virtual int isRootOrNonLin();
     
 protected:
     juce::String svgFileName;

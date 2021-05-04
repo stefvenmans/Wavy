@@ -1,8 +1,8 @@
 /*
   ==============================================================================
 
-    RNodeRootComponent.h
-    Created: 29 Apr 2021 4:50:18pm
+    RNodeNonLinRootComponent.h
+    Created: 2 May 2021 10:02:16pm
     Author:  Stef
 
   ==============================================================================
@@ -11,11 +11,12 @@
 #pragma once
 #include "CircuitComponent.h"
 #include "AdaptedLeafComponent.h"
+#include "NonLinearComponent.h"
 
-class RNodeRootComponent : public CircuitComponent
+class RNodeNonLinRootComponent : public CircuitComponent
 {
 public:
-    RNodeRootComponent();
+    RNodeNonLinRootComponent();
     void paint (juce::Graphics& g) override;
     void connect(CircuitComponent* c) override ;
     int getCollums() override;
@@ -32,12 +33,11 @@ public:
     mat calculateScatteringMatrix(); //Redundant -> to be removed
     mat calculateScatteringMatrix(double *Rp);
     void createNullorStamps();
-    std::vector<int> getNullorStampIndexes();
     ComponentType getComponentType() override;
     int getIndexOfPortOrientation(int o);
-    void setLastSelectedNullor(int i);
 private:
     std::vector<AdaptedLeafComponent*> childs;
+    std::vector<NonLinearComponent*> roots;
     bool nodeDrawView = false;
     
     juce::OwnedArray<juce::Path> wires;
@@ -56,7 +56,6 @@ private:
     std::vector<int> resistorStampIndexes;
     std::vector<int> voltageSourceStampIndexes;
     std::vector<int> nullorStampIndexes;
-    int lastSelectedNullor = 0;
     std::vector<int> wireNodeIndexes;
     int numberOfNodes = 0;
     mat Smat;

@@ -19,6 +19,7 @@ public:
     void paint(juce::Graphics& g) override;
     virtual wdfTreeNode* createWDFComponent();
     virtual wdfTreeNode* getWDFComponent();
+    int isRootOrNonLin() override;
     
 protected:
     std::unique_ptr<wdfTreeNode> treeNode;

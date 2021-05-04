@@ -20,6 +20,7 @@ public:
     virtual wdfRootNode * createWDFComponent() ;
     void connect(CircuitComponent* c) override ;
     AdaptedLeafComponent* getChildComponent();
+    int isRootOrNonLin() override;
     
 protected:
     AdaptedLeafComponent* child;

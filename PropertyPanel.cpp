@@ -74,9 +74,51 @@ PropertyPanel::PropertyPanel()
     setInput.setBounds(180,25*4,25,25);
     setInput.addListener(this);
     
+    for(auto i=0; i<8; i++){
+        addChildComponent(rnodeNullorStamp.add(new juce::Label()));
+        if(i % 2 ==0){
+            rnodeNullorStamp.getLast()->setBounds(i*25,25*7,25,25);
+        }
+        else{
+            rnodeNullorStamp.getLast()->setBounds(i*25-10,25*7,25,25);
+        }
+        switch(i){
+            case 0:
+                rnodeNullorStamp.getLast()->setText("i:", juce::NotificationType::dontSendNotification);
+                rnodeNullorStamp.getLast()->setEditable(false);
+                break;
+            case 2:
+                rnodeNullorStamp.getLast()->setText("j:", juce::NotificationType::dontSendNotification);
+                rnodeNullorStamp.getLast()->setEditable(false);
+                break;
+            case 4:
+                rnodeNullorStamp.getLast()->setText("k:", juce::NotificationType::dontSendNotification);
+                rnodeNullorStamp.getLast()->setEditable(false);
+                break;
+            case 6:
+                rnodeNullorStamp.getLast()->setText("l:", juce::NotificationType::dontSendNotification);
+                rnodeNullorStamp.getLast()->setEditable(false);
+                break;
+            default:
+                rnodeNullorStamp.getLast()->setEditable(true);
+                rnodeNullorStamp.getLast()->addListener(this);
+                break;
+        }
+        
+    }
+    
+    addChildComponent(rnodeNullorComboBox);
+    rnodeNullorComboBox.setBounds(150,25*6+2.5,100,20);
+    rnodeNullorComboBox.setVisible(true);
+    rnodeNullorComboBox.onChange = [this](){
+        ((RNodeRootComponent*)componentLastSelected)->setLastSelectedNullor(rnodeNullorComboBox.getSelectedId()-1);
+        setPropertiesForComponent(componentLastSelected);
+    };
+    
     addChildComponent(addNullorButton);
-    addNullorButton.setBounds(100,20,50,50);
+    addNullorButton.setBounds(2.5,25*6+2.5,100,20);
     addNullorButton.addListener(this);
+    addNullorButton.setButtonText("Create Nullor");
     
     for(auto i=0; i<30; i++){
         textBoxes.add(new juce::Rectangle<float>(0,0+i*25,250,25));
@@ -116,6 +158,7 @@ void PropertyPanel::setPropertiesForComponent(CircuitComponent* c){
             componentValue1.setText(juce::String(((Resistor*)c)->getR()),juce::NotificationType::dontSendNotification);
             componentValue1.setVisible(true);
             componentValue2Text.setVisible(false);
+            componentValue2.setVisible(false);
             setOutputText.setVisible(true);
             setOutput.setVisible(true);
             setInput.setVisible(false);
@@ -132,6 +175,7 @@ void PropertyPanel::setPropertiesForComponent(CircuitComponent* c){
             componentValue1.setText(juce::String(((Capacitor*)c)->getC()),juce::NotificationType::dontSendNotification);
             componentValue1.setVisible(true);
             componentValue2Text.setVisible(false);
+            componentValue2.setVisible(false);
             setOutputText.setVisible(true);
             setOutput.setVisible(true);
             setInput.setVisible(false);
@@ -224,6 +268,16 @@ void PropertyPanel::setPropertiesForComponent(CircuitComponent* c){
             componentName.setVisible(true);
             setControlText.setVisible(false);
             addNullorButton.setVisible(true);
+            for(auto l: rnodeNullorStamp){
+                l->setVisible(true);
+            }
+            
+            auto nullorIndexes = ((RNodeRootComponent*)componentLastSelected)->getNullorStampIndexes();
+            if(nullorIndexes.size()!=0){
+                for(auto i=0; i<4; i++){
+                    rnodeNullorStamp[(1)+2*i]->setText(juce::String(nullorIndexes[i+(rnodeNullorComboBox.getSelectedId()-1)*4]), juce::NotificationType::dontSendNotification);
+                }
+            }
             break;
     }
     
@@ -288,6 +342,9 @@ void PropertyPanel::buttonClicked (juce::Button * b) {
     }
     else if(b == &addNullorButton){
         ((RNodeRootComponent*)componentLastSelected)->createNullorStamps();
+        rnodeNullorComboBox.addItem("Nullor"+juce::String(((RNodeRootComponent*)componentLastSelected)->getNullorStampIndexes().size()/4), rnodeNullorComboBox.getNumItems()+1);
+        rnodeNullorComboBox.setSelectedId(rnodeNullorComboBox.getNumItems());
+        setPropertiesForComponent(componentLastSelected);
     }
 }
     
