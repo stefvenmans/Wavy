@@ -31,3 +31,9 @@ void Resistor::setR(double newR){
 double Resistor::getR(){
     return R;
 }
+
+juce::String Resistor::getInfo(){
+    juce::String result;
+    result = juce::String("<L_RES>") + "name=" + getName() + "," + "x="  +  juce::String(getX()) + "," + "y=" + juce::String(getY()) + "," + "ang=" + juce::String(angle) + "," + "res=" + juce::String(getR()) + "</L_RES>";
+    return result;
+}

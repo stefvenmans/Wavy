@@ -44,7 +44,7 @@ void TwoPortComponent::disconnectChild(){
     child = nullptr;
 }
 
-void TwoPortComponent::connect(CircuitComponent* c)  {
+int TwoPortComponent::connect(CircuitComponent* c)  {
     //Check if at right side
     auto index = 0;
     bool connectSuccesfull = false;
@@ -88,9 +88,10 @@ void TwoPortComponent::connect(CircuitComponent* c)  {
             if(index == 1){
                 isAdapted[1] = true;
             }
-            return;
+            return 1;
         }
         index++;
     }
+    return -1;
 }
     

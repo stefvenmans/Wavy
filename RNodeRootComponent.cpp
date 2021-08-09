@@ -30,34 +30,34 @@ RNodeRootComponent::RNodeRootComponent() : CircuitComponent(""){
         }
     }
     //East
-//    for(auto i=0; i<rows; i++){
-//        portOrientations.push_back(1);
-//        isConnected.push_back(false);
-//        childs.push_back(nullptr);
-//        //Create connection points
-//        for(auto j=0; j<2 ; j++){
-//            gridSize = (getHeight()-2*borderOffset)/(rows*2-1);
-//            portConnectionPoints.add(new juce::Point<float>(getWidth()-11,getYGrid(borderOffset+j*gridSize + i*componentHeight)));
-//            resistorStampIndexes.push_back(-1);
-//            voltageSourceStampIndexes.push_back(-1);
-//        }
-//
-//    }
-    //South
-    for(auto i=0; i<collums; i++){
-        portOrientations.push_back(2);
+    for(auto i=0; i<rows; i++){
+        portOrientations.push_back(1);
         isConnected.push_back(false);
         childs.push_back(nullptr);
         //Create connection points
         for(auto j=0; j<2 ; j++){
-            gridSize = (getWidth()-2*borderOffset)/(collums*2-1);
-            std::cout << " ! " << borderOffset+(collums*2-1-j)*gridSize << std::endl;
-            portConnectionPoints.add(new juce::Point<float>(getXGrid(borderOffset+(collums*2-1-j)*gridSize - i*componentWidth),getHeight()-11));
+            gridSize = (getHeight()-2*borderOffset)/(rows*2-1);
+            portConnectionPoints.add(new juce::Point<float>(getWidth()-11,getYGrid(borderOffset+j*gridSize + i*componentHeight)));
             resistorStampIndexes.push_back(-1);
             voltageSourceStampIndexes.push_back(-1);
         }
 
     }
+    //South
+//    for(auto i=0; i<collums; i++){
+//        portOrientations.push_back(2);
+//        isConnected.push_back(false);
+//        childs.push_back(nullptr);
+//        //Create connection points
+//        for(auto j=0; j<2 ; j++){
+//            gridSize = (getWidth()-2*borderOffset)/(collums*2-1);
+//            std::cout << " ! " << borderOffset+(collums*2-1-j)*gridSize << std::endl;
+//            portConnectionPoints.add(new juce::Point<float>(getXGrid(borderOffset+(collums*2-1-j)*gridSize - i*componentWidth),getHeight()-11));
+//            resistorStampIndexes.push_back(-1);
+//            voltageSourceStampIndexes.push_back(-1);
+//        }
+//
+//    }
     //West
     for(auto i=0; i<rows; i++){
         portOrientations.push_back(3);
@@ -76,6 +76,194 @@ RNodeRootComponent::RNodeRootComponent() : CircuitComponent(""){
     for(auto p: portConnectionPoints){
         std::cout << "p :   " << p->getX() << "-" << p->getY() << std::endl;
     }
+    
+}
+
+RNodeRootComponent::RNodeRootComponent(juce::String data) : CircuitComponent(""){
+    
+    int x1, x2;
+    x1 = data.indexOf("collums");
+    x2 = data.indexOfChar(x1,',');
+    collums = data.substring(x1+juce::String("collums=").length(), x2).getIntValue();
+    
+    x1 = data.indexOf("rows");
+    x2 = data.indexOfChar(x1,',');
+    rows = data.substring(x1+juce::String("rows=").length(), x2).getIntValue();
+    
+    setSize(collums*componentWidth,rows*componentHeight);
+    
+    float x,y;
+    
+    x1 = data.indexOf("portConnectionPoints");
+    x2 = data.indexOfChar(x1,'}');
+    
+    juce::String subString = data.substring(x1 + juce::String("portConnectionPoints={").length(), x2);
+    
+    if(subString.length()>0){
+        int x3;
+        int x4 = 0;
+        
+        while(subString.length() > x4+1){
+            x1 = subString.indexOfChar(x4,'[');
+            x2 = subString.indexOfChar(x1,',');
+            x = subString.substring(x1+1, x2).getFloatValue();
+            
+            x3 = subString.indexOfChar(x2,']');
+            y = subString.substring(x2+1, x3).getFloatValue();
+            x4 = x3;
+        
+            portConnectionPoints.add(new juce::Point<float>(x,y));
+        }
+    }
+    
+    x1 = data.indexOf("interConnectionPoints");
+    x2 = data.indexOfChar(x1,'}');
+    
+    subString = data.substring(x1 + juce::String("interConnectionPoints={").length(), x2);
+    
+    if(subString.length()>0){
+        int x3;
+        int x4 = 0;
+        
+        while(subString.length() > x4+1){
+            x1 = subString.indexOfChar(x4,'[');
+            x2 = subString.indexOfChar(x1,',');
+            x = subString.substring(x1+1, x2).getFloatValue();
+            
+            x3 = subString.indexOfChar(x2,']');
+            y = subString.substring(x2+1, x3).getFloatValue();
+            x4 = x3;
+        
+            interconnectionPoints.add(new juce::Point<float>(x,y));
+        }
+    }
+    
+    x1 = data.indexOf("wires");
+    x2 = data.indexOf(x1,"},portConnectionPoints");
+    
+    subString = data.substring(x1 + juce::String("wires={").length(), x2);
+    
+    if(subString.length()>0){
+        int x3;
+        int x4 = 0;
+        
+        bool newPathFlag = false;
+        juce::Point<float> prevPoint;
+        
+        while(subString.length() > x4+2){
+            if(subString.indexOfChar(x4,'{') == x4 || subString.indexOfChar(x4,'}') == x4 + 1){
+                wires.add(new juce::Path());
+                newPathFlag = true;
+            }
+            x1 = subString.indexOfChar(x4,'[');
+            x2 = subString.indexOfChar(x1,',');
+            x = subString.substring(x1+1, x2).getFloatValue();
+            
+            x3 = subString.indexOfChar(x2,']');
+            y = subString.substring(x2+1, x3).getFloatValue();
+            x4 = x3;
+            
+            if(newPathFlag){
+                newPathFlag = false;
+            }
+            else{
+                wires.getLast()->addLineSegment(juce::Line<float>(prevPoint, juce::Point<float>(x,y)),0);
+            }
+            prevPoint = juce::Point<float>(x,y);
+           
+        }
+    }
+   
+    x1 = data.indexOf("resistorStampIndex");
+    x2 = data.indexOfChar(x1,'}');
+    
+    subString = data.substring(x1 + juce::String("resistorStampIndex={").length(), x2);
+    
+    int index;
+    if(subString.length()>0){
+        x2 = 0;
+        while(subString.length() > x2 + 1){
+            if(x2 == 0) x1 = 0;
+            else x1 = x2+1;
+            x2 = subString.indexOfChar(x1,',');
+            if(x2<0) x2 = subString.length();
+            index = subString.substring(x1, x2).getFloatValue();
+            std::cout << "index: " << index << std::endl;
+            resistorStampIndexes.push_back(index);
+        }
+    }
+    
+    x1 = data.indexOf("voltageSourceStampIndex");
+    x2 = data.indexOfChar(x1,'}');
+    
+    subString = data.substring(x1 + juce::String("voltageSourceStampIndex={").length(), x2);
+    
+    if(subString.length()>0){
+        x2 = 0;
+        while(subString.length() > x2 + 1){
+            if(x2 == 0) x1 = 0;
+            else x1 = x2+1;
+            x2 = subString.indexOfChar(x1,',');
+            if(x2<0) x2 = subString.length();
+            index = subString.substring(x1, x2).getFloatValue();
+            std::cout << "index: " << index << std::endl;
+            voltageSourceStampIndexes.push_back(index);
+        }
+    }
+    
+    x1 = data.indexOf("portOrientations");
+    x2 = data.indexOfChar(x1,'}');
+    subString = data.substring(x1 + juce::String("portOrientations={").length(), x2);
+    
+    if(subString.length()>0){
+        x2 = 0;
+        while(subString.length() > x2 + 1){
+            if(x2 == 0) x1 = 0;
+            else x1 = x2+1;
+            x2 = subString.indexOfChar(x1,',');
+            if(x2<0) x2 = subString.length();
+            index = subString.substring(x1, x2).getFloatValue();
+            std::cout << "index: " << index << std::endl;
+            portOrientations.push_back(index);
+            isConnected.push_back(false);
+            childs.push_back(nullptr);
+        }
+    }
+    
+    x1 = data.indexOf("wireNodeIndexes");
+    x2 = data.indexOfChar(x1,'}');
+    subString = data.substring(x1 + juce::String("wireNodeIndexes={").length(), x2);
+    
+    if(subString.length()>0){
+        x2 = 0;
+        while(subString.length() > x2 + 1){
+            if(x2 == 0) x1 = 0;
+            else x1 = x2+1;
+            x2 = subString.indexOfChar(x1,',');
+            if(x2<0) x2 = subString.length();
+            index = subString.substring(x1, x2).getFloatValue();
+            std::cout << "index: " << index << std::endl;
+            wireNodeIndexes.push_back(index);
+        }
+    }
+    
+    x1 = data.indexOf("nullorStampIndexes");
+    x2 = data.indexOfChar(x1,'}');
+    subString = data.substring(x1 + juce::String("nullorStampIndexes={").length(), x2);
+    
+    if(subString.length()>0){
+        x2 = 0;
+        while(subString.length() > x2 + 1){
+            if(x2 == 0) x1 = 0;
+            else x1 = x2+1;
+            x2 = subString.indexOfChar(x1,',');
+            if(x2<0) x2 = subString.length();
+            index = subString.substring(x1, x2).getFloatValue();
+            std::cout << "index: " << index << std::endl;
+            nullorStampIndexes.push_back(index);
+        }
+    }
+    
     
 }
 
@@ -126,7 +314,7 @@ int RNodeRootComponent::getIndexOfPortOrientation(int o){
     }
 }
 
-void RNodeRootComponent::connect(CircuitComponent* c) {
+int RNodeRootComponent::connect(CircuitComponent* c) {
     //Check if at right side
     auto index = 0;
     bool connectSuccesfull = false;
@@ -140,7 +328,7 @@ void RNodeRootComponent::connect(CircuitComponent* c) {
                         connectSuccesfull = true;
                         childs[i] = (AdaptedLeafComponent*)c;
         
-                        return;
+                        return 1;
                     }
                 }
                 break;
@@ -152,7 +340,7 @@ void RNodeRootComponent::connect(CircuitComponent* c) {
                         connectSuccesfull = true;
                         childs[i+getIndexOfPortOrientation(1)] = (AdaptedLeafComponent*)c;
                         
-                        return;
+                        return 1;
                     }
                 }
                 break;
@@ -164,7 +352,7 @@ void RNodeRootComponent::connect(CircuitComponent* c) {
                         connectSuccesfull = true;
                         childs[getIndexOfPortOrientation(2) +(collums-i-1)] = (AdaptedLeafComponent*)c;
                         
-                        return;
+                        return 1;
                     }
                 }
                 break;
@@ -176,7 +364,7 @@ void RNodeRootComponent::connect(CircuitComponent* c) {
                         connectSuccesfull = true;
                         childs[getIndexOfPortOrientation(3) +(rows-i-1)] = (AdaptedLeafComponent*)c;
                         
-                        return;
+                        return 1;
                     }
                 }
                 break;
@@ -187,10 +375,11 @@ void RNodeRootComponent::connect(CircuitComponent* c) {
 //                    std::cout << child << std::endl;
 //                }
             
-            return;
+            return 1;
         }
         index++;
     }
+    return -1;
 }
 
 int RNodeRootComponent::getCollums(){
@@ -348,6 +537,7 @@ void RNodeRootComponent::mouseDown(const juce::MouseEvent &e){
             //Check if it can connect to another wire
             for(auto w : wires){
                 if(w->intersectsLine(juce::Line<float>(x-1,y-1,x+1,y+1),0) && w != wires.getLast()){
+                    std::cout << "#1" << std::endl;
                     wires.getLast()->addLineSegment(juce::Line<float>(startPoint, endPoint),0);
                     interconnectionPoints.add(new juce::Point<float>(x,y));
                     isDrawingWire = false;
@@ -369,6 +559,7 @@ void RNodeRootComponent::mouseDown(const juce::MouseEvent &e){
             if(x == 11 || x == getWidth() -11 || y==11 || y == getHeight()-11){
                 for(auto p: portConnectionPoints){
                     if(p->getX() == x && p->getY() == y){
+                        std::cout << "#2" << std::endl;
                         wires.getLast()->addLineSegment(juce::Line<float>(startPoint, endPoint),0);
                         isDrawingWire = false;
                         //Add component stamp index (new) of startOfWire and endPoint
@@ -385,6 +576,8 @@ void RNodeRootComponent::mouseDown(const juce::MouseEvent &e){
                 }
             }
             else{ // Make wire longer
+                std::cout << "#3" << std::endl;
+                
                 wires.getLast()->addLineSegment(juce::Line<float>(startPoint, endPoint),0);
                 startPoint.setXY(x,y);
                 endPoint.setXY(x,y);
@@ -396,6 +589,7 @@ void RNodeRootComponent::mouseDown(const juce::MouseEvent &e){
             if(x == 11 || x == getWidth()-11 || y==11 || y == getHeight()-11){
                 for(auto p: portConnectionPoints){
                     if(p->getX() == x && p->getY() == y){
+                        std::cout << "#4" << std::endl;
                         isDrawingWire = true;
                         startPoint.setXY(x,y);
                         lastStartPoint = p;
@@ -579,7 +773,7 @@ mat RNodeRootComponent::calculateScatteringMatrix(){
     return S;
 }
 
-mat RNodeRootComponent::calculateScatteringMatrix(double *Rp){
+mat RNodeRootComponent::calculateScatteringMatrix(matData* rootMatrixData, double *Rp){
     if(wireNodeIndexes.size() == 0) return nullptr;
     
 
@@ -664,6 +858,7 @@ mat RNodeRootComponent::calculateScatteringMatrix(double *Rp){
     
     mat S = I + 2*R*Z1*inv(X)*Z2*I;
     S.print();
+    normalise(S).print();
     Smat = S;
     return S;
 }
@@ -689,3 +884,118 @@ ComponentType RNodeRootComponent::getComponentType() {
     return ComponentType::R_RNODE;
 }
 
+juce::String RNodeRootComponent::getInfo(){
+    juce::String result;
+    result = juce::String("<") + ComponentTypeString[getComponentType()] +">" + "name=" + getName() + "," + "x="  +  juce::String(getX()) + "," + "y=" + juce::String(getY()) + "," + "ang=" + juce::String(angle) + ",collums=" + juce::String(collums) + ",rows=" + juce::String(rows);
+    
+    result += ",wires={";
+    
+    float x;
+    float y;
+    
+    float xPrev=-1;
+    float yPrev=-1;
+    
+    for(auto w: wires){
+        auto it = new juce::Path::Iterator(*w);
+        
+        int j=0;
+        
+        if(xPrev!=-1 && yPrev!=-1) result += ",";
+        result += "{";
+        
+        xPrev = -2;
+        yPrev = -2;
+        
+        while(it->next()){
+            x = it->x1;
+            y = it->y1;
+            if((xPrev!=x || yPrev!=y) && (xPrev!=-2 && yPrev!=-2)) result += ",";
+            switch(it->elementType){
+                case juce::Path::Iterator::PathElementType::startNewSubPath:
+                    if(x!=xPrev || y!=yPrev) result += "[" + juce::String(x) + "," + juce::String(y) + "]";
+                    break;
+                case juce::Path::Iterator::PathElementType::lineTo:
+                    if(x!=xPrev || y!=yPrev) result += "[" + juce::String(x) + "," + juce::String(y) + "]";
+                    break;
+                default:
+                    break;
+            }
+            
+            xPrev = x;
+            yPrev = y;
+        }
+        
+        
+        result += "}";
+        
+    }
+    result += "}";
+    
+    result += ",portConnectionPoints={";
+    bool firstPoint = true;
+    for(auto p : portConnectionPoints){
+        if(firstPoint != true) result += ",";
+        result += "[" + juce::String(p->getX()) + "," + juce::String(p->getY()) + "]";
+        firstPoint = false;
+    }
+    result += "}";
+    
+    result += ",interConnectionPoints={";
+    firstPoint = true;
+    for(auto p : interconnectionPoints){
+        if(firstPoint != true) result += ",";
+        result += "[" + juce::String(p->getX()) + "," + juce::String(p->getY()) + "]";
+        firstPoint = false;
+    }
+    result += "}";
+    
+    result += ",resistorStampIndex={";
+    firstPoint = true;
+    for(auto r : resistorStampIndexes){
+        if(firstPoint != true) result += ",";
+        result += juce::String(r);
+        firstPoint = false;
+    }
+    result += "}";
+    
+    result += ",voltageSourceStampIndex={";
+    firstPoint = true;
+    for(auto v : voltageSourceStampIndexes){
+        if(firstPoint != true) result += ",";
+        result += juce::String(v);
+        firstPoint = false;
+    }
+    result += "}";
+    
+    result += ",portOrientations={";
+    firstPoint = true;
+    for(auto p : portOrientations){
+        if(firstPoint != true) result += ",";
+        result += juce::String(p);
+        firstPoint = false;
+    }
+    result += "}";
+    
+    result += ",wireNodeIndexes={";
+    firstPoint = true;
+    for(auto w : wireNodeIndexes){
+        if(firstPoint != true) result += ",";
+        result += juce::String(w);
+        firstPoint = false;
+    }
+    result += "}";
+    
+    result += ",nullorStampIndexes={";
+    firstPoint = true;
+    for(auto n : nullorStampIndexes){
+        if(firstPoint != true) result += ",";
+        result += juce::String(n);
+        firstPoint = false;
+    }
+    result += "}";
+    
+    result += "</"+ComponentTypeString[getComponentType()]+">";
+    
+    return result;
+}

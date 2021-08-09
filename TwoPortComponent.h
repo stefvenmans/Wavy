@@ -18,7 +18,7 @@ public:
     void paint(juce::Graphics& g) override;
     void connectChild(AdaptedLeafComponent* newChild);
     void disconnectChild();
-    void connect(CircuitComponent* c) override ;
+    int connect(CircuitComponent* c) override ;
 protected:
     AdaptedLeafComponent* child;
     std::vector<juce::Line<float>> portLines;

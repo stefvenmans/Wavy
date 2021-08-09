@@ -17,7 +17,7 @@ class OnePortComponent : public AdaptedLeafComponent
 public:
     OnePortComponent(juce::String svgFileName);
     void paint(juce::Graphics& g) override;
-    void connect(CircuitComponent* c) override ;
+    int connect(CircuitComponent* c) override ;
     
 protected:
     juce::Line<float> wBLine;

@@ -21,18 +21,26 @@ public:
     virtual int getCollums();
     virtual int getRows();
     virtual void mouseDown(const juce::MouseEvent& e) override;
+    virtual void mouseDoubleClick(const juce::MouseEvent &e) override;
     void mouseDrag(const juce::MouseEvent& e) override;
     void mouseUp(const juce::MouseEvent& e) override;
     void addHandler(std::function<bool(CircuitComponent* c)> clbk);
     float getRotationX();
     float getRotationY();
-    virtual void connect(CircuitComponent* c);
+    virtual int connect(CircuitComponent* c);
     bool hasOrientation(int orientation);
     virtual ComponentType getComponentType();
     void setPropertyPanelCallback(std::function<void(CircuitComponent* c)> callbackFunction);
     juce::String getName();
     void setName(juce::String);
     virtual int isRootOrNonLin();
+    void setControl(juce::Slider* s);
+    juce::Slider* getControl();
+    virtual juce::String getInfo();
+    bool isComponentConnected();
+    void rotateComponent();
+    std::function<void(CircuitComponent*c)> componentIsSelectedCallBack;
+    void unSelectComponent();
     
 protected:
     juce::String svgFileName;
@@ -51,5 +59,7 @@ protected:
     std::vector<bool> isConnected;
     int lastX;
     int lastY;
+    juce::Slider* slider;
+    bool componentIsSelected = false;
     
 };

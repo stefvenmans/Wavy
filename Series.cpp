@@ -26,3 +26,4 @@ wdfTreeNode * Series::createWDFComponent() {
 ComponentType Series::getComponentType() {
     return ComponentType::A_SER;
 }
+

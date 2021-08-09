@@ -20,7 +20,8 @@ public:
     void connectRightChild(AdaptedLeafComponent* newRightChild);
     void disconnectLeftChild();
     void disconnectRightChild();
-    void connect(CircuitComponent* c) override;
+    int connect(CircuitComponent* c) override;
+    juce::String getInfo() override;
     
 protected:
     AdaptedLeafComponent* leftChild;

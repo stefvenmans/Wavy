@@ -12,7 +12,7 @@
 
 RNodeNonLinRootComponent::RNodeNonLinRootComponent() : CircuitComponent(""){
     
-    collums = 2;
+    collums = 1;
     rows = 1;
     setSize(collums*componentWidth,rows*componentHeight);
     
@@ -126,7 +126,7 @@ int RNodeNonLinRootComponent::getIndexOfPortOrientation(int o){
     }
 }
 
-void RNodeNonLinRootComponent::connect(CircuitComponent* c) {
+int RNodeNonLinRootComponent::connect(CircuitComponent* c) {
     //Check if at right side
     auto index = 0;
     bool connectSuccesfull = false;
@@ -136,63 +136,67 @@ void RNodeNonLinRootComponent::connect(CircuitComponent* c) {
                 //Check if component is above + has orientation 2
                 for(auto i=0 ; i<collums; i++){
                     if(c->getY() + c->getHeight() == getY() && c->getX() == getX() + i*(getWidth()/collums) && c->hasOrientation(2)){
-                        if(isRootOrNonLin() == 2){
-                            std::cout << "circuit will be able to connect to this side : " << o << "with index : " << i << std::endl;
-                            connectSuccesfull = true;
-                            roots[i] = (NonLinearComponent*)c;
-            
-                            return;
+                        if(c->isRootOrNonLin() == 2){
+                            if(collums-c->getCollums()>=i){
+                                std::cout << "circuit will be able to connect to this side : " << o << "with index : " << i << std::endl;
+                                connectSuccesfull = true;
+                                roots[i] = (NonLinearComponent*)c;
+                                return 1;
+                            }
+                            
                         }
+                        else return -1;
                     }
                 }
                 break;
             case 1:
-                //Check if component is right + has orientation 3
-                for(auto i=0; i<rows; i++){
-                    if(getX() + getWidth() == c->getX() && c->getY() == getY() + i*(getHeight()/rows) && c->hasOrientation(3)){
-                        std::cout << "circuit will be able to connect to this side : " << o << "with index : " << i << std::endl;
-                        connectSuccesfull = true;
-                        childs[i+getIndexOfPortOrientation(1)] = (AdaptedLeafComponent*)c;
-                        
-                        return;
+                    //Check if component is right + has orientation 3
+                    for(auto i=0; i<rows; i++){
+                        if(getX() + getWidth() == c->getX() && c->getY() == getY() + i*(getHeight()/rows) && c->hasOrientation(3)){
+                            std::cout << "circuit will be able to connect to this side : " << o << "with index : " << i << std::endl;
+                            connectSuccesfull = true;
+                            childs[i+getIndexOfPortOrientation(1)-collums] = (AdaptedLeafComponent*)c;
+                            
+                            return 1;
+                        }
                     }
-                }
-                break;
-            case 2:
-                //Check if component is under + has orientation 0
-                for(auto i=0 ; i<collums; i++){
-                    if(getY() + getHeight() == c->getY() && c->getX() == getX() + i*(getWidth()/collums) && c->hasOrientation(0)){
-                        std::cout << "circuit will be able to connect to this side : " << o << "with index : " << i + 2 << std::endl;
-                        connectSuccesfull = true;
-                        childs[getIndexOfPortOrientation(2) +(collums-i-1)] = (AdaptedLeafComponent*)c;
-                        
-                        return;
+                    break;
+                case 2:
+                    //Check if component is under + has orientation 0
+                    for(auto i=0 ; i<collums; i++){
+                        if(getY() + getHeight() == c->getY() && c->getX() == getX() + i*(getWidth()/collums) && c->hasOrientation(0)){
+                            std::cout << "circuit will be able to connect to this side : " << o << "with index : " << i + 2 << std::endl;
+                            connectSuccesfull = true;
+                            childs[getIndexOfPortOrientation(2) +(collums-i-1)-collums] = (AdaptedLeafComponent*)c;
+                            
+                            return 1;
+                        }
                     }
-                }
-                break;
-            case 3:
-                //Check if component is left + has orientation 1
-                for(auto i=0; i<rows; i++){
-                    if(c->getX() + c->getWidth() == getX() && c->getY() == getY() + i*(getHeight()/rows) && c->hasOrientation(1)){
-                        std::cout << "circuit will be able to connect to this side : " << o << "with index : " << i + 4 << std::endl;
-                        connectSuccesfull = true;
-                        childs[getIndexOfPortOrientation(3) +(rows-i-1)] = (AdaptedLeafComponent*)c;
-                        
-                        return;
+                    break;
+                case 3:
+                    //Check if component is left + has orientation 1
+                    for(auto i=0; i<rows; i++){
+                        if(c->getX() + c->getWidth() == getX() && c->getY() == getY() + i*(getHeight()/rows) && c->hasOrientation(1)){
+                            std::cout << "circuit will be able to connect to this side : " << o << "with index : " << i + 4 << std::endl;
+                            connectSuccesfull = true;
+                            childs[getIndexOfPortOrientation(3) +(rows-i-1)-collums] = (AdaptedLeafComponent*)c;
+                            
+                            return 1;
+                        }
                     }
-                }
-                break;
-        }
+                    break;
+            }
         if(connectSuccesfull){
             isConnected[index] = true;
 //                for(auto child : childs){
 //                    std::cout << child << std::endl;
 //                }
             
-            return;
+            return 1;
         }
         index++;
     }
+    return -1;
 }
 
 int RNodeNonLinRootComponent::getCollums(){
@@ -216,6 +220,10 @@ int RNodeNonLinRootComponent::getRows(){
 
 int RNodeNonLinRootComponent::getNumChilds(){
     return childs.size();
+}
+
+int RNodeNonLinRootComponent::getNumRoots(){
+    return roots.size();
 }
 
 std::vector<wdfTreeNode*> RNodeNonLinRootComponent::getChildsWDFTreeNodes (){
@@ -578,12 +586,12 @@ mat RNodeNonLinRootComponent::calculateScatteringMatrix(){
     return S;
 }
 
-mat RNodeNonLinRootComponent::calculateScatteringMatrix(double *Rp){
+mat RNodeNonLinRootComponent::calculateScatteringMatrix(matData* rootMatrixData, double *Rp){
     if(wireNodeIndexes.size() == 0) return nullptr;
     
 
     auto nNullors = nullorStampIndexes.size()/4;
-    auto n = getNumChilds();
+    auto n = getNumChilds() + getNumRoots();
     auto nInR = *(std::max_element(wireNodeIndexes.begin(),wireNodeIndexes.end())) + 1;
     auto nTotal = n + nInR;
     
@@ -595,9 +603,14 @@ mat RNodeNonLinRootComponent::calculateScatteringMatrix(double *Rp){
     double R_val[n];
     double G_val[n];
     
-    for(auto i=0; i<n; i++){
-        R_val[i] = Rp[i];
-        G_val[i] = 1/Rp[i];
+    for(auto i=0; i<getNumRoots(); i++){
+        R_val[i] = 1e3;
+        G_val[i] = 1/(1e3);
+    }
+    
+    for(auto i=0; i<getNumChilds(); i++){
+        R_val[i+getNumRoots()] = Rp[i];
+        G_val[i+getNumRoots()] = 1/Rp[i];
     }
     
     mat I = eye(n, n);
@@ -664,6 +677,62 @@ mat RNodeNonLinRootComponent::calculateScatteringMatrix(double *Rp){
     mat S = I + 2*R*Z1*inv(X)*Z2*I;
     S.print();
     Smat = S;
+    
+    //Non Linear
+    
+    int i1 = 0;
+    int i2 = getNumRoots()-1;
+    int i3 = n-1;
+    int ni = getNumRoots();
+    
+    mat Ri(ni,ni,fill::zeros);
+    for(unsigned int ii = 0; ii < ni; ++ii ) {
+        Ri.at(ii, ii) = R_val[ii];
+    }
+    
+    mat C1 = join_rows(-Ri, eye(ni, ni));
+    mat C2 = join_rows(-2*Ri,eye(ni,ni));
+    mat C = join_cols(C1,C2);
+    
+    mat Ii = eye(ni, ni);
+    
+    mat S11 = S.submat(i1, i1, i2, i2);
+    mat S12 = S.submat(i1, i2+1, i2, i3);
+    mat S21 = S.submat(i2+1, i1, i3, i2);
+    mat S22 = S.submat(i2+1, i2+1, i3, i3);
+    
+    i1 = 0;
+    i2 = ni-1;
+    i3 = i2 + ni;
+    
+    
+    
+    mat C11 = C.submat(i1, i1, i2, i2);
+    mat C12 = C.submat(i1, i2+1, i2, i3);
+    mat C21 = C.submat(i2+1, i1, i3, i2);
+    mat C22 = C.submat(i2+1, i2+1, i3, i3);
+    
+    mat H = inv(Ii-C22*S11);
+    
+    mat E = C12*(Ii+S11*H*C22)*S12;
+    mat F = C12*S11*H*C21+C11;
+    mat M = S21*H*C22*S12+S22;
+    mat N = S21*H*C21;
+    
+    rootMatrixData->Emat = normalise(E);
+    rootMatrixData->Fmat = normalise(F);
+    rootMatrixData->Mmat = normalise(M);
+    rootMatrixData->Nmat = normalise(N);
+    
+    std::cout << "E Mat" <<std::endl;
+    rootMatrixData->Emat.print();
+    std::cout << "F Mat" <<std::endl;
+    rootMatrixData->Fmat.print();
+    std::cout << "M Mat" <<std::endl;
+    rootMatrixData->Mmat.print();
+    std::cout << "N Mat" <<std::endl;
+    rootMatrixData->Nmat.print();
+    
     return S;
 }
 
@@ -679,3 +748,16 @@ ComponentType RNodeNonLinRootComponent::getComponentType() {
     return ComponentType::R_RNODE;
 }
 
+std::vector<int> RNodeNonLinRootComponent::getNLlist(){
+    std::vector<int> nlList;
+    for(auto i=0; i<roots.size(); i++){
+        if(roots[i]->getComponentType() == NL_DIO){
+            nlList.push_back(DIODE);
+        }
+        if(roots[i]->getComponentType() == NL_TRAN){
+            nlList.push_back(NPN_EM);
+            i++;
+        }
+    }
+    return nlList;
+}

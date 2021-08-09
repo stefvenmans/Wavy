@@ -45,3 +45,9 @@ double VoltageSource::getRs(){
     return Rs;
 }
 
+juce::String VoltageSource::getInfo(){
+    juce::String result;
+    result = juce::String("<") + ComponentTypeString[getComponentType()] +">" + "name=" + getName() + "," + "x="  +  juce::String(getX()) + "," + "y=" + juce::String(getY()) + "," + "ang=" + juce::String(angle) + ",vs=" + juce::String(getVs()) + ",rs=" + juce::String(getRs());
+    result += "</"+ComponentTypeString[getComponentType()]+">";
+    return result;
+}

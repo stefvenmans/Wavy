@@ -26,3 +26,10 @@ wdfRootNode * ShortCircuit::createWDFComponent() {
 ComponentType ShortCircuit::getComponentType() {
     return ComponentType::SR_SHC;
 }
+
+juce::String ShortCircuit::getInfo(){
+    juce::String result;
+    result = juce::String("<") + ComponentTypeString[getComponentType()] +">" + "name=" + getName() + "," + "x="  +  juce::String(getX()) + "," + "y=" + juce::String(getY()) + "," + "ang=" + juce::String(angle);
+    result += "</"+ComponentTypeString[getComponentType()]+">";
+    return result;
+}

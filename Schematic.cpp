@@ -42,10 +42,41 @@ void Schematic::paint (juce::Graphics& g){
     float lineThickness = 0.75f;
     g.strokePath (sineGraph, juce::PathStrokeType(lineThickness));
     
-    
+    if(isSelecting){
+        
+        g.setColour(juce::Colour((juce::uint8)0, (juce::uint8)0, (juce::uint8)20, 0.05f));
+        g.fillRect(selectRect);
+        g.setColour(juce::Colour((juce::uint8)0, (juce::uint8)0, (juce::uint8)20, 0.9f));
+        g.drawRect(selectRect);
+    }
 }
 
 void Schematic::mouseDown(const juce::MouseEvent& e){
-       std::cout << "mouse down was called" << std::endl;
-   }
+    if(hidePropertyPanelCallbck != nullptr){
+        hidePropertyPanelCallbck();
+    }
+    isSelecting = true;
+    selectRect.setPosition(e.getMouseDownX(), e.getMouseDownY());
     
+}
+
+void Schematic::mouseDrag(const juce::MouseEvent& e){
+    if(e.getPosition().getX()-selectRect.getX()<0){
+        
+    }
+    else{
+        selectRect.setWidth(e.getPosition().getX()-selectRect.getX());
+    }
+    if(e.getPosition().getY()-selectRect.getY()<0){
+       
+    }
+    else{
+        selectRect.setHeight(e.getPosition().getY()-selectRect.getY());
+    }
+    repaint();
+}
+
+void Schematic::mouseUp(const juce::MouseEvent& e){
+    isSelecting = false;
+    repaint();
+}

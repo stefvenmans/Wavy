@@ -36,7 +36,7 @@ void OnePortComponent::paint(juce::Graphics& g)
     
 }
 
-void OnePortComponent::connect(CircuitComponent* c) {
+int OnePortComponent::connect(CircuitComponent* c) {
     //Check if at right side
     auto index = 0;
     bool connectSuccesfull = false;
@@ -74,10 +74,11 @@ void OnePortComponent::connect(CircuitComponent* c) {
         if(connectSuccesfull){
             isConnected[index] = true;
             isAdapted[index] = true;
-            return;
+            return 1;
         }
         index++;
     }
+    return -1;
 }
     
 

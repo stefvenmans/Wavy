@@ -24,3 +24,10 @@ ComponentType Inverter::getComponentType() {
     return ComponentType::A_INV;
 }
 
+juce::String Inverter::getInfo(){
+    juce::String result;
+    result = juce::String("<") + ComponentTypeString[getComponentType()] +">" + "name=" + getName() + "," + "x="  +  juce::String(getX()) + "," + "y=" + juce::String(getY()) + "," + "ang=" + juce::String(angle);
+    result += "</"+ComponentTypeString[getComponentType()]+">";
+    return result;
+}
+

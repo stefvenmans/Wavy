@@ -16,7 +16,7 @@ Diode::Diode() : NonLinearComponent("diode.svg")
     isConnected.push_back(false);
 }
 
-void Diode::connect(CircuitComponent* c) {
+int Diode::connect(CircuitComponent* c) {
     //Check if at right side
     auto index = 0;
     bool connectSuccesfull = false;
@@ -54,8 +54,13 @@ void Diode::connect(CircuitComponent* c) {
         if(connectSuccesfull){
             isConnected[index] = true;
             
-            return;
+            return 1;
         }
         index++;
     }
+    return -1;
+}
+
+ComponentType Diode::getComponentType(){
+    return NL_DIO;
 }

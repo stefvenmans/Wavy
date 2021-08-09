@@ -13,7 +13,7 @@
 
 CircuitComponent::CircuitComponent(juce::String svgFileName) : svgFileName{svgFileName}
 {
-    auto svgFile = juce::File::getCurrentWorkingDirectory().getChildFile(svgFileName);
+    auto svgFile = appDataPath.getChildFile(svgFileName);
     svgDrawable = juce::Drawable::createFromSVGFile(svgFile);
     if (svgDrawable != nullptr)
     {
@@ -31,16 +31,23 @@ void CircuitComponent::paint (juce::Graphics& g)
         if(angle >= juce::MathConstants<float>::twoPi) angle = 0;
         rotate = false;
     }
+    
+    if(componentIsSelected){
+        g.setColour(juce::Colour((juce::uint8)0, (juce::uint8)0, (juce::uint8)80, (juce::uint8)50));
+        g.fillRect(10, 10, 80, 80);
+        std::cout << "dbg" << std::endl;
+    }
+    
     svgDrawable->draw (g, getAlpha(), getTransform().rotated(angle, getWidth()/2, getHeight()/2));
     
 }
 
 void CircuitComponent::paintSVG(juce::Graphics& g)
 {
-    if(rotate){
-        angle += juce::MathConstants<float>::halfPi;
-        if(angle >= juce::MathConstants<float>::twoPi) angle = 0;
-        rotate = false;
+    if(componentIsSelected){
+        g.setColour(juce::Colour((juce::uint8)0, (juce::uint8)10, (juce::uint8)50, (juce::uint8)20));
+        g.fillRect(10, 10, 80, 80);
+        g.setColour(juce::Colours::black);
     }
     
     svgDrawable->draw (g, getAlpha(), getTransform().rotated(angle, getWidth()/2, getHeight()/2));
@@ -60,20 +67,26 @@ int CircuitComponent::getRows(){
     return 1;
 }
 
+void CircuitComponent::rotateComponent(){
+    //rotate = true;
+    shooldDrag = false;
+    
+    angle += juce::MathConstants<float>::halfPi;
+    if(angle >= juce::MathConstants<float>::twoPi) angle = 0;
+    
+    for(auto &o: portOrientations){
+        o++;
+        if(o > 3) o = 0;
+    }
+    repaint();
+}
+
 void CircuitComponent::mouseDown(const juce::MouseEvent& e)
 {
     lastX = getX();
     lastY = getY();
     if(e.mods.isCommandDown() && e.mods.isShiftDown()){
-        rotate = true;
-        shooldDrag = false;
-        repaint();
-        
-        for(auto &o: portOrientations){
-            o++;
-            if(o > 3) o = 0;
-        }
-        
+        rotateComponent();
     }
     else if(e.mods.isCommandDown()){
         shooldDrag = false;
@@ -120,6 +133,17 @@ void CircuitComponent::mouseUp(const juce::MouseEvent& e)
         }
         else{
             setBounds(x - x % width, y - y % height, width*getCollums(), height*getRows());
+            
+        }
+    }
+    if(x == getX() && y == getY()) {
+        if(componentIsSelected!=true){
+            componentIsSelected = true;
+            repaint();
+            if(componentIsSelectedCallBack != nullptr) componentIsSelectedCallBack(this);
+            if(propertyPanelCallback != nullptr){
+                propertyPanelCallback(this);
+            }
         }
     }
     shooldDrag = true;
@@ -133,6 +157,13 @@ void CircuitComponent::mouseUp(const juce::MouseEvent& e)
     }
     
     
+}
+
+void CircuitComponent::mouseDoubleClick(const juce::MouseEvent &e){
+    std::cout << "mouse double clicked" << std::endl;
+    if(propertyPanelCallback != nullptr){
+        propertyPanelCallback(this);
+    }
 }
 
 void CircuitComponent::addHandler(std::function<bool(CircuitComponent* c)> clbk)
@@ -150,7 +181,7 @@ float CircuitComponent::getRotationY()
     return std::sin(angle);
 }
 
-void CircuitComponent::connect(CircuitComponent* c){
+int CircuitComponent::connect(CircuitComponent* c){
     
 }
 
@@ -182,4 +213,33 @@ void CircuitComponent::setName(juce::String name){
 //0 for leaf, 1 for simple root, 2 for non-lin root
 int CircuitComponent::isRootOrNonLin(){
     return -1;
+}
+
+void CircuitComponent::setControl(juce::Slider* s){
+    slider = s;
+}
+
+juce::Slider* CircuitComponent::getControl(){
+    return slider;
+}
+
+juce::String CircuitComponent::getInfo(){
+    return "CircuitComponent";
+}
+
+bool CircuitComponent::isComponentConnected(){
+//    int i=0;
+//    for(auto b : isConnected){
+//        if(b) i+=1;
+//    }
+//    if (i==isConnected.size()) return true;
+//    else return false;
+    if(isConnected.back()) return true;
+    else return false;
+}
+
+void CircuitComponent::unSelectComponent(){
+    componentIsSelected = false;
+    const juce::MessageManagerLock mmLock;
+    repaint();
 }

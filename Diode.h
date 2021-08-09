@@ -15,5 +15,6 @@ class Diode : public NonLinearComponent
 {
 public:
     Diode();
-    void connect(CircuitComponent* c) override ;
+    int connect(CircuitComponent* c) override ;
+    ComponentType getComponentType() override;
 };

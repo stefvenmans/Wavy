@@ -19,6 +19,7 @@ public:
     ComponentType getComponentType() override;
     void setR(double newR);
     double getR();
+    juce::String getInfo() override;
 private:
     double R;
 };

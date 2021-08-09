@@ -34,3 +34,12 @@ void IdealVoltageSource::setVs(double newVs){
 double IdealVoltageSource::getVs(){
     return Vs;
 }
+
+juce::String IdealVoltageSource::getInfo(){
+    juce::String result;
+    result = juce::String("<") + ComponentTypeString[getComponentType()] +">" + "name=" + getName() + "," + "x="  +  juce::String(getX()) + "," + "y=" + juce::String(getY()) + "," + "ang=" + juce::String(angle) + ",Vs=" + juce::String(getVs());
+//    if(child != nullptr) result += "\np1=" + child->getInfo();
+//    else result += "\np1=NC";
+    result += "</"+ComponentTypeString[getComponentType()]+">";
+    return result;
+}

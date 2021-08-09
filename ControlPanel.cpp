@@ -11,7 +11,8 @@
 #include "ControlPanel.h"
 
 ControlPanel::ControlPanel(){
-    auto svgFile = juce::File::getCurrentWorkingDirectory().getChildFile("playbutton.svg");
+    std::cout << juce::File::getSpecialLocation(juce::File::SpecialLocationType::currentApplicationFile).getFullPathName() << std::endl;
+    auto svgFile = appDataPath.getChildFile("playbutton.svg");
     svgDrawable = juce::Drawable::createFromSVGFile(svgFile);
     if (svgDrawable != nullptr)
     {
@@ -19,10 +20,12 @@ ControlPanel::ControlPanel(){
             svgDrawableComposite->setBoundingBox ({ static_cast<float>(getX()+5), static_cast<float>(getY()+5), 20,20 });
         }
     }
+    
 }
 
 void ControlPanel::paint (juce::Graphics& g){
     g.setColour(juce::Colours::darkgrey);
     g.fillAll();
     svgDrawable->draw (g, getAlpha(),getTransform());
+    //std::cout << "All good till here CP" << std::endl;
 }

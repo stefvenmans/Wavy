@@ -21,6 +21,7 @@ public:
     double getC();
     void setT(double newT);
     double getT();
+    juce::String getInfo() override;
     
 private:
     double C;

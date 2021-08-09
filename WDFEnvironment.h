@@ -25,6 +25,7 @@ public:
     void setSubtreeEntryNodes(wdfTreeNode * node);
     
     void setSubtreeEntryNodes(std::vector<wdfTreeNode*> nodes);
+    void setSubtreeEntryNodes(std::vector<wdfTreeNode*> nodes, std::vector<int> nlList);
     
     void setRoot(wdfRootNode * r);
     
@@ -32,7 +33,7 @@ public:
     
     void setSMat(mat newSMat);
     
-    std::function<mat(double*)> getRNodeMatLambda;
+    std::function<mat(matData* rootMatrixData, double*)> getRNodeMatLambda;
 private:
     mat Smat;
 };

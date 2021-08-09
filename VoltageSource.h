@@ -22,6 +22,7 @@ public:
     double getVs();
     void setRs(double newRs);
     double getRs();
+    juce::String getInfo() override;
     
 private:
     double Vs;

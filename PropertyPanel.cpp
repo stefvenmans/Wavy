@@ -74,6 +74,10 @@ PropertyPanel::PropertyPanel()
     setInput.setBounds(180,25*4,25,25);
     setInput.addListener(this);
     
+    addAndMakeVisible(setControl);
+    setControl.setBounds(180, 25*5, 25, 25);
+    setControl.addListener(this);
+    
     for(auto i=0; i<8; i++){
         addChildComponent(rnodeNullorStamp.add(new juce::Label()));
         if(i % 2 ==0){
@@ -278,6 +282,11 @@ void PropertyPanel::setPropertiesForComponent(CircuitComponent* c){
                     rnodeNullorStamp[(1)+2*i]->setText(juce::String(nullorIndexes[i+(rnodeNullorComboBox.getSelectedId()-1)*4]), juce::NotificationType::dontSendNotification);
                 }
             }
+            
+            for(auto i: ((RNodeRootComponent*)componentLastSelected)->getNullorStampIndexes()){
+                std::cout << "nullor from prop: " << i << std::endl;
+            }
+            
             break;
     }
     
@@ -340,6 +349,67 @@ void PropertyPanel::buttonClicked (juce::Button * b) {
             setInputOfCircuit(componentLastSelected);
         }
     }
+    else if(b == &setControl){
+        if(setControl.getToggleState() == true){
+            juce::Slider* s = new juce::Slider();
+            auto c = componentLastSelected;
+            switch(componentLastSelected->getComponentType()){
+                case L_RES:
+                    //s = new juce::Slider();
+                    c = componentLastSelected;
+                    s->onValueChange = [this,c, s](){
+                        ((Resistor*)(c))->setR(s->getValue());
+                        if(componentLastSelected == c){
+                            setPropertiesForComponent(c);
+                        }
+                    };
+                    frontPanel->addNewComponent(s);
+                    componentLastSelected->setControl(s);
+                    break;
+                case L_CAP:
+                    //s = new juce::Slider();
+                    c = componentLastSelected;
+                    s->onValueChange = [this,c, s](){
+                        ((Capacitor*)(c))->setC(s->getValue());
+                        if(componentLastSelected == c){
+                            setPropertiesForComponent(c);
+                        }
+                    };
+                    frontPanel->addNewComponent(s);
+                    componentLastSelected->setControl(s);
+                    break;
+                case L_VOL:
+                    //s = new juce::Slider();
+                    c = componentLastSelected;
+                    s->onValueChange = [this,c, s](){
+                        ((VoltageSource*)(c))->setVs(s->getValue());
+                        if(componentLastSelected == c){
+                            setPropertiesForComponent(c);
+                        }
+                    };
+                    frontPanel->addNewComponent(s);
+                    componentLastSelected->setControl(s);
+                    break;
+                case SR_VOL:
+                    //s = new juce::Slider();
+                    c = componentLastSelected;
+                    s->onValueChange = [this,c, s](){
+                        ((IdealVoltageSource*)(c))->setVs(s->getValue());
+                        if(componentLastSelected == c){
+                            setPropertiesForComponent(c);
+                        }
+                    };
+                    frontPanel->addNewComponent(s);
+                    componentLastSelected->setControl(s);
+                    break;
+            }
+        }
+        else{
+            frontPanel->removeComponent(componentLastSelected->getControl());
+            componentLastSelected->setControl(nullptr);
+        }
+    }
+    
     else if(b == &addNullorButton){
         ((RNodeRootComponent*)componentLastSelected)->createNullorStamps();
         rnodeNullorComboBox.addItem("Nullor"+juce::String(((RNodeRootComponent*)componentLastSelected)->getNullorStampIndexes().size()/4), rnodeNullorComboBox.getNumItems()+1);
@@ -348,3 +418,6 @@ void PropertyPanel::buttonClicked (juce::Button * b) {
     }
 }
     
+void PropertyPanel::setFrontPanel(FrontPanel* fPanel){
+    frontPanel = fPanel;
+}

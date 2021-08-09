@@ -17,4 +17,5 @@ public:
     ShortCircuit();
     wdfRootNode * createWDFComponent() override;
     ComponentType getComponentType() override;
+    juce::String getInfo() override;
 };

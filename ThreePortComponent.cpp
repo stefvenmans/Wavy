@@ -58,7 +58,7 @@ void ThreePortComponent::disconnectRightChild(){
     rightChild = nullptr;
 }
 
-void ThreePortComponent::connect(CircuitComponent* c)  {
+int ThreePortComponent::connect(CircuitComponent* c)  {
     //Check if at right side
     auto index = 0;
     bool connectSuccesfull = false;
@@ -106,8 +106,20 @@ void ThreePortComponent::connect(CircuitComponent* c)  {
             if(index == 2){
                 isAdapted[2] = true;
             }
-            return;
+            return 1;
         }
         index++;
     }
+    return -1;
+}
+
+juce::String ThreePortComponent::getInfo(){
+    juce::String result;
+    result = juce::String("<") + ComponentTypeString[getComponentType()] +">" + "name=" + getName() + "," + "x="  +  juce::String(getX()) + "," + "y=" + juce::String(getY()) + "," + "ang=" + juce::String(angle);
+//    if(leftChild != nullptr) result += "\np1=" + leftChild->getInfo();
+//    else result += "\np1=NC";
+//    if(rightChild != nullptr) result += "\np2=" + rightChild->getInfo();
+//    else result += "\np2=NC";
+    result += "</"+ComponentTypeString[getComponentType()]+">";
+    return result;
 }

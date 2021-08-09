@@ -17,4 +17,5 @@ public:
     Inverter();
     wdfTreeNode* createWDFComponent() override;
     ComponentType getComponentType() override;
+    juce::String getInfo() override;
 };

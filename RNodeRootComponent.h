@@ -16,8 +16,9 @@ class RNodeRootComponent : public CircuitComponent
 {
 public:
     RNodeRootComponent();
+    RNodeRootComponent(juce::String data);
     void paint (juce::Graphics& g) override;
-    void connect(CircuitComponent* c) override ;
+    int connect(CircuitComponent* c) override ;
     int getCollums() override;
     int getRows() override;
     int getNumChilds();
@@ -30,12 +31,15 @@ public:
     int getXGrid(int x);
     int getYGrid(int y);
     mat calculateScatteringMatrix(); //Redundant -> to be removed
-    mat calculateScatteringMatrix(double *Rp);
+    mat calculateScatteringMatrix(matData* rootMatrixData, double *Rp);
     void createNullorStamps();
     std::vector<int> getNullorStampIndexes();
     ComponentType getComponentType() override;
     int getIndexOfPortOrientation(int o);
     void setLastSelectedNullor(int i);
+    juce::String getInfo() override;
+    
+    
 private:
     std::vector<AdaptedLeafComponent*> childs;
     bool nodeDrawView = false;

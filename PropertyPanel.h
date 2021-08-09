@@ -25,6 +25,7 @@
 #include "IdealVoltageSource.h"
 #include "ShortCircuit.h"
 #include "RNodeRootComponent.h"
+#include "FrontPanel.h"
 
 class PropertyPanel :   public juce::Component,
                         public juce::Label::Listener,
@@ -38,6 +39,7 @@ public:
     void setOutputCallbackFunction(std::function<void(CircuitComponent* c)> callback);
     void setInputCallbackFunction(std::function<void(CircuitComponent*cc)> callback);
     void buttonClicked (juce::Button * b) override;
+    void setFrontPanel(FrontPanel* fPanel);
     
 private:
     juce::Label componentName;
@@ -55,8 +57,10 @@ private:
     CircuitComponent* componentLastSelected = nullptr;
     juce::ToggleButton setOutput;
     juce::ToggleButton setInput;
+    juce::ToggleButton setControl;
     juce::TextButton addNullorButton;
     std::function<void(CircuitComponent* c)> setOutputOfCircuit;
     std::function<void(CircuitComponent* c)> setInputOfCircuit;
     juce::OwnedArray<juce::Rectangle<float>> textBoxes;
+    FrontPanel* frontPanel;
 };

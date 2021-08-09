@@ -19,6 +19,7 @@ public:
     ComponentType getComponentType() override;
     void setVs(double newVs);
     double getVs();
+    juce::String getInfo();
     
 private:
     double Vs;

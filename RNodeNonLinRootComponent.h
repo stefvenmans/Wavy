@@ -18,11 +18,13 @@ class RNodeNonLinRootComponent : public CircuitComponent
 public:
     RNodeNonLinRootComponent();
     void paint (juce::Graphics& g) override;
-    void connect(CircuitComponent* c) override ;
+    int connect(CircuitComponent* c) override ;
     int getCollums() override;
     int getRows() override;
     int getNumChilds();
+    int getNumRoots();
     std::vector<wdfTreeNode*> getChildsWDFTreeNodes ();
+    std::vector<int> getNLlist();
     void mouseDoubleClick(const juce::MouseEvent & e) override;
     void mouseDown(const juce::MouseEvent &e) override;
     void mouseDrag(const juce::MouseEvent& e) override;
@@ -31,7 +33,7 @@ public:
     int getXGrid(int x);
     int getYGrid(int y);
     mat calculateScatteringMatrix(); //Redundant -> to be removed
-    mat calculateScatteringMatrix(double *Rp);
+    mat calculateScatteringMatrix(matData* rootMatrixData, double *Rp);
     void createNullorStamps();
     ComponentType getComponentType() override;
     int getIndexOfPortOrientation(int o);

@@ -6,8 +6,11 @@ MainComponent::MainComponent()
     // Make sure you set the size of the component after
     // you add any child components.
     
+    setWantsKeyboardFocus(true);
+    addKeyListener(this);
+    
     formatManager.registerBasicFormats();
-    auto file = juce::File::getCurrentWorkingDirectory().getChildFile ("input.wav");
+    auto file = appDataPath.getChildFile ("input.wav");
     reader = formatManager.createReaderFor(file);
     
     
@@ -24,6 +27,12 @@ MainComponent::MainComponent()
     viewPort.setBounds(0, 0, 820, 420);
     viewPort.setScrollBarsShown(true,true);
     
+    schematic.hidePropertyPanelCallbck = [this]() {
+        propertyPanelShowHide = false;
+        schematic.repaint();
+        resized();
+    };
+    
     addAndMakeVisible(propertyPanel);
     propertyPanelViewPort.setViewedComponent(&propertyPanel, false);
     addChildComponent(propertyPanelViewPort);
@@ -31,9 +40,49 @@ MainComponent::MainComponent()
     propertyPanel.setBounds(0, 0, 250, 1000);
     propertyPanel.setOutputCallbackFunction(std::bind(&MainComponent::setOutput,this,std::placeholders::_1));
     propertyPanel.setInputCallbackFunction(std::bind(&MainComponent::setInput,this,std::placeholders::_1));
+    propertyPanel.setFrontPanel(&frontPanel);
     
     addAndMakeVisible(frontPanel);
     frontPanel.setBounds(0,420,820,580-420);
+    
+    //Create input signals;
+    //sine
+    std::vector<double> sine;
+    for(int i=0; i<inputSignalDuration*44100; i++){
+        sine.push_back(std::sin(inputSignalFrequency*i*(juce::MathConstants<double>::pi*2.0)/44100.0));
+    }
+    inputSignals.push_back(sine);
+    
+    std::vector<double> square;
+    for(int i=0; i<inputSignalDuration*44100; i++){
+        if(std::sin(inputSignalFrequency*i*(juce::MathConstants<double>::pi*2.0)/44100.0)>0){
+            square.push_back(-1);
+        }
+        else{
+            square.push_back(1);
+        }
+    }
+    inputSignals.push_back(square);
+    
+    std::vector<double> impulse;
+    for(int i=0; i<inputSignalDuration*44100; i++){
+        if(i==0){
+            impulse.push_back(1);
+        }
+        else{
+            impulse.push_back(0);
+        }
+    }
+    inputSignals.push_back(impulse);
+    
+    frontPanel.setSignalType = [this](int i){
+        inputSignalType = i-2;
+    };
+    
+    frontPanel.setSignalFreq = [this](double f){
+        
+    };
+    
     
     addAndMakeVisible(calculateMatButton);
     calculateMatButton.setButtonText("Mat");
@@ -74,7 +123,7 @@ MainComponent::MainComponent()
     };
     
     addAndMakeVisible(showLibraryButton);
-    showLibraryButton.setBounds(600, 400, 40, 40);
+    //showLibraryButton.setBounds(600, 400, 40, 40);
     showLibraryButton.onClick = [this] () {
 //        std::cout << sidePanel.Component::isShowing() << std::endl;
 //        if(sidePanel.isPanelShowing() == false){
@@ -116,7 +165,17 @@ MainComponent::MainComponent()
     componentSelector.addItem("R Node Non Lin", 15);
     addAndMakeVisible(componentSelector);
     
+    
+    
     componentSelector.onChange = [this](){
+        std::function<void(CircuitComponent*c)> componentIsSelectedCallBack = [this] (CircuitComponent*c)
+        {
+            for(auto c : selectedComponents){
+                c->unSelectComponent();
+            }
+            selectedComponents.clear();
+            selectedComponents.push_back(c);
+        };
         switch(componentSelector.getSelectedId()){
             case 1:
                 schematic.addAndMakeVisible(leafComponents.add(new Resistor()));
@@ -124,6 +183,7 @@ MainComponent::MainComponent()
                 leafComponents.getLast()->setBounds(20,20,100,100);
                 leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
                 leafComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
+                leafComponents.getLast()->componentIsSelectedCallBack = componentIsSelectedCallBack;
                 break;
                 
             case 2:
@@ -132,6 +192,7 @@ MainComponent::MainComponent()
                 leafComponents.getLast()->setBounds(20,20,100,100);
                 leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
                 leafComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
+                leafComponents.getLast()->componentIsSelectedCallBack = componentIsSelectedCallBack;
                 break;
                 
             case 3:
@@ -140,6 +201,7 @@ MainComponent::MainComponent()
                 leafComponents.getLast()->setBounds(20,20,100,100);
                 leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
                 leafComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
+                leafComponents.getLast()->componentIsSelectedCallBack = componentIsSelectedCallBack;
                 break;
                 
             case 4:
@@ -148,6 +210,7 @@ MainComponent::MainComponent()
                 leafComponents.getLast()->setBounds(20,20,200,100);
                 leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
                 leafComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
+                leafComponents.getLast()->componentIsSelectedCallBack = componentIsSelectedCallBack;
                 break;
                 
             case 5:
@@ -156,6 +219,7 @@ MainComponent::MainComponent()
                 leafComponents.getLast()->setBounds(20,20,100,100);
                 leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
                 leafComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
+                leafComponents.getLast()->componentIsSelectedCallBack = componentIsSelectedCallBack;
                 break;
                 
             case 6:
@@ -164,6 +228,7 @@ MainComponent::MainComponent()
                 leafComponents.getLast()->setBounds(20,20,100,100);
                 leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
                 leafComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
+                leafComponents.getLast()->componentIsSelectedCallBack = componentIsSelectedCallBack;
                 break;
             case 7:
                 simpleRoot = std::make_unique<IdealVoltageSource>();
@@ -172,6 +237,7 @@ MainComponent::MainComponent()
                 simpleRoot->setBounds(20,20,100,100);
                 simpleRoot->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
                 simpleRoot->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
+                simpleRoot->componentIsSelectedCallBack = componentIsSelectedCallBack;
                 break;
             case 8:
                 rNode = std::make_unique<RNodeRootComponent>();
@@ -179,6 +245,7 @@ MainComponent::MainComponent()
                 rNode->setCentrePosition(200, 200);
                 rNode->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
                 rNode->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
+                rNode->componentIsSelectedCallBack = componentIsSelectedCallBack;
                 break;
             case 9:
                 schematic.addAndMakeVisible(leafComponents.add(new VoltageSource()));
@@ -186,6 +253,7 @@ MainComponent::MainComponent()
                 leafComponents.getLast()->setBounds(20,20,100,100);
                 leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
                 leafComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
+                leafComponents.getLast()->componentIsSelectedCallBack = componentIsSelectedCallBack;
                 break;
             case 10:
                 simpleRoot = std::make_unique<ShortCircuit>();
@@ -194,6 +262,7 @@ MainComponent::MainComponent()
                 simpleRoot->setBounds(20,20,100,100);
                 simpleRoot->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
                 simpleRoot->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
+                simpleRoot->componentIsSelectedCallBack = componentIsSelectedCallBack;
                 break;
             case 11:
                 break;
@@ -233,7 +302,7 @@ MainComponent::MainComponent()
     res1Val.highLim = 1e4;
     
     freqSlider.setRange(100, 2000);
-    freqSlider.setSliderStyle(juce::Slider::SliderStyle::LinearVertical);
+    freqSlider.setSliderStyle(juce::Slider::SliderStyle::LinearHorizontal);
     freqSlider.setValue(440);
     addAndMakeVisible(freqSlider);
     freqSlider.onDragEnd = [this](){
@@ -250,8 +319,9 @@ MainComponent::MainComponent()
     sidePanel.showOrHide(false);
     
     addAndMakeVisible(calculateRaw);
+    calculateRaw.setButtonText("Simulate");
     calculateRaw.onClick = [this] () {
-        if(simpleRoot != nullptr || rNode != nullptr){
+        if(simpleRoot != nullptr || rNode != nullptr || rNodeRootNonLin!=nullptr){
             if(simpleRoot != nullptr){
                     wdfEnvironment.setSubtreeEntryNodes(simpleRoot->getChildComponent()->createWDFComponent());
                     wdfEnvironment.setRoot(simpleRoot->createWDFComponent());
@@ -263,8 +333,8 @@ MainComponent::MainComponent()
                 wdfEnvironment.setSubtreeEntryNodes(rNode->getChildsWDFTreeNodes());
                 
                 //wdfEnvironment.adaptTree();
-                wdfEnvironment.getRNodeMatLambda = [this](double *Rp){
-                    return rNode->calculateScatteringMatrix(Rp);
+                wdfEnvironment.getRNodeMatLambda = [this](matData* rootMatrixData, double *Rp){
+                    return rNode->calculateScatteringMatrix(rootMatrixData, Rp);
                 };
                 
                 wdfEnvironment.initTree();
@@ -272,19 +342,64 @@ MainComponent::MainComponent()
                 
                 }
             
-            if(inputIndex != -1){
-                readAudio();
-                processAudio();
-                writeAudio();
+            else if(rNodeRootNonLin!=nullptr){
+                wdfEnvironment.setSubtreeEntryNodes(rNodeRootNonLin->getChildsWDFTreeNodes(), rNodeRootNonLin->getNLlist());
+                
+                //wdfEnvironment.adaptTree();
+                wdfEnvironment.getRNodeMatLambda = [this](matData* rootMatrixData, double *Rp){
+                    return rNodeRootNonLin->calculateScatteringMatrix(rootMatrixData, Rp);
+                };
+                
+                wdfEnvironment.initTree();
+                wdfEnvironment.adaptTree();
             }
-            else {
-                for(auto i=0; i<500; i++){
+            
+//            if(inputIndex != -1){
+//                readAudio();
+//                processAudio();
+//                writeAudio();
+//            }
+            //else {
+                
+                std::vector<double> signalToPlotIn;
+                std::vector<double> signalToPlotOut;
+                frontPanel.plotSignal(true);
+                
+                for(auto i=0; i<inputSignalDuration*44100; i++){
+                if(inputIndex != -1 && inputIndex < leafComponents.size()){
+//                    if(i==0){
+//                        signalToPlotIn.push_back(1);
+//                        ((wdfTerminatedResVSource*)(leafComponents[inputIndex]->getWDFComponent()))->Vs = 1;//bufferIn[i];
+//                    }
+//                    else{
+//                        signalToPlotIn.push_back(0);
+//                        ((wdfTerminatedResVSource*)(leafComponents[inputIndex]->getWDFComponent()))->Vs = 0;//bufferIn[i];
+                    //}
+//                    signalToPlotIn.push_back(std::sin(i*(juce::MathConstants<double>::pi*2.0)/200.0));
+//                    ((wdfTerminatedResVSource*)(leafComponents[inputIndex]->getWDFComponent()))->Vs = std::sin(i*(juce::MathConstants<double>::pi*2.0)/200.0);//bufferIn[i];
+                    
+                    ((wdfTerminatedResVSource*)(leafComponents[inputIndex]->getWDFComponent()))->Vs = inputSignals[inputSignalType][i];//bufferIn[i];
+                }
                 wdfEnvironment.cycleWave();
                 if(outputIndex != -1 && outputIndex < leafComponents.size()){
-                    std::cout << -leafComponents[outputIndex]->getWDFComponent()->upPort->getPortVoltage() << std::endl;
+                    //std::cout << -leafComponents[outputIndex]->getWDFComponent()->upPort->getPortVoltage() << std::endl;
+                    
+                        signalToPlotIn.push_back(inputSignals[inputSignalType][i]);
+                        signalToPlotOut.push_back(leafComponents[outputIndex]->getWDFComponent()->upPort->getPortVoltage());
+                    
                 }
                 else std::cout << "No output set!" << std::endl;
                 }
+                frontPanel.addSignalToPlot(signalToPlotIn,signalToPlotOut);
+                
+            //}
+            
+            if(inputIndex != -1){
+                //wdfEnvironment.initTree();
+                wdfEnvironment.adaptTree();
+                readAudio();
+                processAudio();
+                writeAudio();
             }
             
         }
@@ -297,7 +412,15 @@ MainComponent::MainComponent()
         std::cout << std::endl;
     };
     runSimulationButton.setButtonText("Run");
-
+    
+    //Menubar
+    menuBar.reset(new juce::MenuBarComponent(this));
+    addAndMakeVisible(menuBar.get());
+    juce::MenuBarModel::setMacMainMenu(this);
+    
+    setApplicationCommandManagerToWatch (&commandManager);
+    commandManager.registerAllCommandsForTarget (this);
+    
 
     // Some platforms require permissions to open input channels so request that here
     if (juce::RuntimePermissions::isRequired (juce::RuntimePermissions::recordAudio)
@@ -312,6 +435,7 @@ MainComponent::MainComponent()
         
         setAudioChannels (2, 2);
     }
+    
 }
 
 void MainComponent::openPropertyPanelForComponent(CircuitComponent* c){
@@ -334,15 +458,32 @@ bool MainComponent::wantsToConnect_(CircuitComponent* c)
         auto iW = i->getWidth();
         auto iH = i->getHeight();
         
-        if(((iX+iW)==cX && iY==cY) || ((iY+iH)==cY && iX==cX) || ((cX+cW)==iX && cY==iY) || ((cY+cH)==iY && cX==iX)){
-            std::cout << "circuit could connect"<< std::endl;
-            c->connect(i);
-            i->connect(c);
+        for(int j=0; j<c->getCollums(); j++){
             
-            c->repaint();
-            i->repaint();
-            //return true;
+            for(int k=0; k<c->getRows(); k++){
+                if(((iX+iW)==cX && iY==(cY+componentHeight*k)) || ((iY+iH)==cY && iX==(cX+componentWidth*j)) || ((cX+cW)==iX && (cY+componentHeight*k)==iY) || ((cY+cH)==iY && (cX+componentWidth*j)==iX)){
+                            std::cout << "circuit could connect"<< std::endl;
+                            c->connect(i);
+                            i->connect(c);
+                
+                            c->repaint();
+                            i->repaint();
+                        }
+                }
+            
         }
+        
+        
+        
+//        if(((iX+iW)==cX && iY==cY) || ((iY+iH)==cY && iX==cX) || ((cX+cW)==iX && cY==iY) || ((cY+cH)==iY && cX==iX)){
+//            std::cout << "circuit could connect"<< std::endl;
+//            c->connect(i);
+//            i->connect(c);
+//
+//            c->repaint();
+//            i->repaint();
+//            //return true;
+//        }
     }
     
     if(simpleRoot != nullptr && c!=rNode.get()){
@@ -361,6 +502,7 @@ bool MainComponent::wantsToConnect_(CircuitComponent* c)
         }
     }
     
+    //if(rNode != nullptr && c!=simpleRoot.get() && c!= rNode.get()){
     if(rNode != nullptr && c!=simpleRoot.get()){
         
         
@@ -385,7 +527,6 @@ bool MainComponent::wantsToConnect_(CircuitComponent* c)
     
     if(rNodeRootNonLin != nullptr && c!=simpleRoot.get() && c!=rNode.get()){
         
-        
         for(auto i=0; i<rNodeRootNonLin->getCollums(); i++){
             for(auto j=0; j<rNodeRootNonLin->getRows(); j++){
                 auto iX = rNodeRootNonLin.get()->getX() + (rNodeRootNonLin.get()->getWidth()/rNodeRootNonLin->getCollums())*(i);
@@ -396,11 +537,12 @@ bool MainComponent::wantsToConnect_(CircuitComponent* c)
                 if(((iX+iW)==cX && iY==cY) || ((iY+iH)==cY && iX==cX) || ((cX+cW)==iX && cY==iY) || ((cY+cH)==iY && cX==iX)){
                     std::cout << "a r node root want could connect to this component" << std::endl;
                     
-                    c->connect(rNodeRootNonLin.get());
-                    rNodeRootNonLin->connect(c);
-                    
-                    c->repaint();
-                    rNodeRootNonLin->repaint();
+                    if(rNodeRootNonLin->connect(c) == 1){
+                        c->connect(rNodeRootNonLin.get());
+                        c->repaint();
+                        rNodeRootNonLin->repaint();
+                        std::cout << rNodeRootNonLin->getName() << " connected to " << c->getName() << std::endl;
+                    } 
                 }
             }
         }
@@ -422,6 +564,7 @@ MainComponent::~MainComponent()
     // This shuts down the audio device and clears the audio source.
     shutdownAudio();
     delete reader;
+    juce::MenuBarModel::setMacMainMenu (nullptr);
 }
 
 //==============================================================================
@@ -465,11 +608,12 @@ void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& buffe
                     //output[i] = wdf->getOutputValue();
                     
                     if(inputIndex != -1 && inputIndex < leafComponents.size()){
-                        ((wdfTerminatedResVSource*)(leafComponents[inputIndex]->getWDFComponent()))->Vs = 0.1*osc.processSample( 0);//bufferIn[i];
+                        ((wdfTerminatedResVSource*)(leafComponents[inputIndex]->getWDFComponent()))->Vs = osc.processSample( 0);//bufferIn[i];
                     }
                     wdfEnvironment.cycleWave();
                     
                     if(outputIndex != -1 && outputIndex < leafComponents.size()){
+                        //std::cout << -leafComponents[outputIndex]->getWDFComponent()->upPort->getPortVoltage() << std::endl;
                         //std::cout << -leafComponents[outputIndex]->getWDFComponent()->upPort->getPortVoltage() << std::endl;
                         bufferOut[i] = -leafComponents[outputIndex]->getWDFComponent()->upPort->getPortVoltage();
             //        std::cout << wdf->getOutputValue() << std::endl;
@@ -480,7 +624,7 @@ void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& buffe
         else {
             
             for(auto i=0; i<bufferToFill.numSamples ;i++){
-                bufferOut[i] = 0.1*osc.processSample( 0);
+                //bufferOut[i] = 0.1*osc.processSample( 0);
             }
         }
     }
@@ -513,46 +657,8 @@ void MainComponent::resized()
     // This is called when the MainContentComponent is resized.
     // If you add any child components, this is where you should
     // update their positions.
-//    r1.setBounds(20,20, 100, 100);
-//    r2.setBounds(220,20, 100, 100);
-//    s1.setBounds(120,20,100,100);
-//    v1.setBounds(120,120,100,100);
-//
-//    c1.setBounds(320,320,100,100);
-//    p1.setBounds(420,320,100,100);
-    
-    
-//    juce::Grid grid;
-//
-//    grid.setGap((juce::Grid::Px)20);
-//    using Track = juce::Grid::TrackInfo;
-//
-//    grid.templateRows = { Track ((juce::Grid::Fr)1), Track ((juce::Grid::Fr)1), Track ((juce::Grid::Fr)1), Track ((juce::Grid::Fr)1), Track ((juce::Grid::Fr)1) };
-//    grid.templateColumns = { Track ((juce::Grid::Fr)1), Track ((juce::Grid::Fr)1), Track ((juce::Grid::Fr)1), Track ((juce::Grid::Fr)1), Track ((juce::Grid::Fr)1), Track ((juce::Grid::Fr)1), Track ((juce::Grid::Fr)1) };
-//
-//    grid.autoColumns = Track ((juce::Grid::Fr)(1));
-//    grid.autoRows    = Track ((juce::Grid::Fr)(1));
-//    grid.autoFlow = juce::Grid::AutoFlow::column;
-    
-//    grid.items.addArray ({  juce::GridItem (components[0]),///.withArea (2, 2, 4, 4)
-//                            juce::GridItem(components[1]),
- //                           juce::GridItem(components[2])
-//                               GridItem (items[1]),
-//                               GridItem (items[2]).withArea ({}, 3),
-//                               GridItem (items[3]),
-//                               GridItem (items[4]).withArea (GridItem::Span (2), {}),
-//                               GridItem (items[5]),
-//                               GridItem (items[6]),
-//                               GridItem (items[7]),
-//                               GridItem (items[8]),
-//                               GridItem (items[9]),
-//                               GridItem (items[10]),
-//                               GridItem (items[11])
-  //                          });
 
-//    grid.performLayout (getLocalBounds());
     
-    //draggableComp.setBounds(300, 300, 100, 100);
     
     int numX = 5;
     int numY = 5;
@@ -560,13 +666,13 @@ void MainComponent::resized()
     auto stepX = getWidth()/numX;
     auto stepY = getHeight()/numY;
     
-    textButton.setBounds(getWidth()-350,40,50,50);
-    showLibraryButton.setBounds(getWidth()-350,40*2+80,50,50);
-    freqSlider.setBounds(680,40,80,200);
-    componentSelector.setBounds(getWidth()-350,40+80,100,30);
-    calculateMatButton.setBounds(getWidth()-350,40*2+80+60,50,50);
-    calculateRaw.setBounds(getWidth()-350, 40*2+80+60+70, 50, 50);
-    runSimulationButton.setBounds(getWidth()-350, 40*2+80+60+70+ 60, 50, 50);
+    //textButton.setBounds(getWidth()-350,40,50,50);
+    //showLibraryButton.setBounds(getWidth()-350,40*2+80,50,50);
+    freqSlider.setBounds(160,getHeight()-30,150,30);
+    componentSelector.setBounds(20,20,100,30);
+    //calculateMatButton.setBounds(getWidth()-350,40*2+80+60,50,50);
+    calculateRaw.setBounds(50, getHeight()-30, 100, 30);
+    runSimulationButton.setBounds(getWidth()-350, getHeight()-30, 50, 30);
     
 //    for (auto x = 0; x < numX; ++x)
 //        {
@@ -594,9 +700,11 @@ void MainComponent::resized()
         propertyPanelViewPort.setVisible(false);
     }
     
+    
 }
 
 void MainComponent::mouseMagnify (const juce::MouseEvent &event, float scaleFactor){
+    
     scale -= (1-scaleFactor)/2.0;
     
     if(scale <= (getWidth()-10)/(5.0*820.0)) scale = (getWidth()-10)/(5.0*820.0);
@@ -634,7 +742,7 @@ void MainComponent::processAudio(){
 void MainComponent::writeAudio(){
     juce::WavAudioFormat format;
     std::unique_ptr<juce::AudioFormatWriter> writer;
-    auto file_out = juce::File::getCurrentWorkingDirectory().getChildFile ("output.wav");
+    auto file_out = appDataPath.getChildFile ("output.wav");
     file_out.deleteFile();
     writer.reset(format.createWriterFor(new juce::FileOutputStream(file_out), 44100, buffer_out.getNumChannels(), 24, {}, 0));
     
@@ -642,4 +750,530 @@ void MainComponent::writeAudio(){
         std::cout << "audio file written" << std::endl;
         writer->writeFromAudioSampleBuffer(buffer_out, 0, buffer_out.getNumSamples());
     }
+}
+
+
+// File opening and saving starts here  //
+juce::StringArray MainComponent::getMenuBarNames()
+{
+    return { "File", "Edit", "Window","Help" };
+}
+
+juce::PopupMenu MainComponent::getMenuForIndex (int menuIndex, const juce::String& /*menuName*/)
+{
+    juce::PopupMenu menu;
+    if (menuIndex == 0)
+    {
+        menu.addCommandItem (&commandManager, CommandIDs::fileNew);
+        menu.addCommandItem (&commandManager, CommandIDs::fileOpen);
+       #if JUCE_MAC
+        menu.addCommandItem (&commandManager, CommandIDs::fileSave);
+       #endif
+        menu.addCommandItem (&commandManager, CommandIDs::fileSaveAs);
+    }
+    else if (menuIndex == 1)
+    {
+        menu.addCommandItem (&commandManager, CommandIDs::editCopy);
+        menu.addCommandItem (&commandManager, CommandIDs::editPaste);
+        menu.addCommandItem (&commandManager, CommandIDs::editDelete);
+    }
+    else if (menuIndex == 2)
+    {
+        
+    }
+    return menu;
+}
+
+juce::ApplicationCommandTarget* MainComponent::getNextCommandTarget()
+{
+    return findFirstTargetParentComponent();
+}
+
+void MainComponent::getAllCommands (juce::Array<juce::CommandID>& c)
+{
+    juce::Array<juce::CommandID> commands { CommandIDs::fileNew, CommandIDs::fileOpen,
+                                CommandIDs::fileSave,
+                                CommandIDs::fileSaveAs, CommandIDs::editCopy };
+    c.addArray (commands);
+}
+
+void MainComponent::getCommandInfo (juce::CommandID commandID, juce::ApplicationCommandInfo& result)
+{
+    switch (commandID)
+    {
+        case CommandIDs::fileNew:
+            result.setInfo ("New", "", "Menu", 0);
+            result.addDefaultKeypress ('n', juce::ModifierKeys(8));
+            break;
+        case CommandIDs::fileOpen:
+            result.setInfo ("Open", "", "Menu", 0);
+            result.addDefaultKeypress ('o', juce::ModifierKeys(8));
+            break;
+        case CommandIDs::fileSave:
+            result.setInfo ("Save", "", "Menu", 0);
+            result.addDefaultKeypress ('s', juce::ModifierKeys(8));
+            break;
+        case CommandIDs::fileSaveAs:
+            result.setInfo ("Save As", "", "Menu", 0);
+            result.addDefaultKeypress ('s', juce::ModifierKeys(9));
+            break;
+        case CommandIDs::editCopy:
+            result.setInfo ("Copy", "", "Copy", 0);
+            result.addDefaultKeypress ('o', juce::ModifierKeys::shiftModifier);
+            break;
+        default:
+            break;
+    }
+}
+
+bool MainComponent::perform (const InvocationInfo& info) 
+{
+    juce::File file = appDataPath.getChildFile("circuit.txt");
+    
+    char lineEnd [] = {'\n',0};
+    std::unique_ptr<juce::FileOutputStream> fileOutStream;
+    std::unique_ptr<juce::FileInputStream> fileInStream;
+
+    juce::String rslt;
+    
+    switch (info.commandID)
+    {
+        case CommandIDs::fileNew:
+            leafComponents.clear();
+            simpleRoot.reset();
+            selectedComponents.clear();
+            
+            break;
+            
+        case CommandIDs::fileOpen:
+            
+            fc.reset(new juce::FileChooser("",appDataPath,"*",true));
+            
+            fc->launchAsync ( juce::FileBrowserComponent::openMode
+                                             | juce::FileBrowserComponent::canSelectFiles,
+                                         [this] (const juce::FileChooser& chooser)
+                                         {
+                                             juce::String chosen;
+                                             auto results = chooser.getURLResults();
+
+                                             for (auto result : results)
+                                                 chosen << (result.isLocalFile() ? result.getLocalFile().getFullPathName()
+                                                                                 : result.toString (false)) << "\n";
+                                            
+                                            auto file = chooser.getResult();
+                                            std::cout << file.getFullPathName() << std::endl;
+                if(file.getFileExtension() == ".txt"){
+                    auto fileInStream = file.createInputStream();
+                    while(fileInStream->isExhausted() != true){
+                        std::cout << fileInStream->readNextLine() << std::endl;
+                    }
+                    
+                    juce::String rslt;
+                    leafComponents.clear();
+                    simpleRoot.reset();
+                    
+                    fileInStream = file.createInputStream();
+                    
+                    while(fileInStream->isExhausted() != true){
+                        rslt = fileInStream->readNextLine();
+                        //rslt.substring(1,)
+                        int x1 = rslt.indexOfChar('<');
+                        int x2 = rslt.indexOfChar('>');
+                        if(x1 != -1 && x2 != -1){
+                            int componentTypeIndex = std::find(ComponentTypeStringVector.begin(),ComponentTypeStringVector.end(),rslt.substring(x1+1, x2)) - ComponentTypeStringVector.begin();
+                            //std::cout << componentTypeIndex << std::endl;
+                            //std::cout << rslt.substring(x1+1, x2) <<  "enum:" << ComponentTypeStringVector[componentTypeIndex] << std::endl;
+                            
+                            x1 = rslt.indexOf("name");
+                            x2 = rslt.indexOfChar('x');
+                            juce::String name = rslt.substring(x1+5, x2-1);
+                            
+                            x1 = rslt.indexOfChar('x');
+                            x2 = rslt.indexOfChar('y');
+                            int x = rslt.substring(x1+2, x2-1).getIntValue();
+                            
+                            x1 = rslt.indexOfChar('y');
+                            x2 = rslt.indexOf("ang");
+                            int y = rslt.substring(x1+2, x2-1).getIntValue();
+                            
+                            x1 = rslt.indexOf("ang");
+                            x2 = rslt.indexOfChar(x1,',');
+                            if(x2<0){
+                                x2 = rslt.indexOfChar(x1,'<');
+                            }
+                            int ang = round((rslt.substring(x1+4, x2).getFloatValue())/(juce::MathConstants<float>::halfPi));
+                            std::cout << rslt.substring(x1+4, x2) << std::endl;
+                            std::cout << ang << std::endl;
+                            
+                            double val;
+                            
+                            
+                            if(componentTypeIndex != ComponentTypeStringVector.size()){
+                                std::function<void(CircuitComponent*c)> componentIsSelectedCallBack = [this] (CircuitComponent*c)
+                                {
+                                    for(auto c : selectedComponents){
+                                        
+                                        c->unSelectComponent();
+                                    }
+                                    selectedComponents.clear();
+                                    selectedComponents.push_back(c);
+                                };
+                                switch(componentTypeIndex){
+                                    case ComponentType::L_RES:
+                                        x1 = rslt.indexOf("res");
+                                        x2 = rslt.indexOfChar(x1,'<');
+                                        val = rslt.substring(x1+4, x2).getDoubleValue();
+                                        schematic.addAndMakeVisible(leafComponents.add(new Resistor()));
+                                        leafComponents.getLast()->setName(name);
+                                        ((Resistor*)(leafComponents.getLast()))->setR(val);
+                                        if(ang !=0) for(int i=0; i<ang; i++) leafComponents.getLast()->rotateComponent();
+                                        leafComponents.getLast()->setBounds(x,y,100,100);
+                                        leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
+                                        leafComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
+                                        leafComponents.getLast()->componentIsSelectedCallBack = componentIsSelectedCallBack;
+                                        break;
+                                        
+                                    case ComponentType::L_CAP:
+                                        x1 = rslt.indexOf("cap");
+                                        x2 = rslt.indexOfChar(x1,'<');
+                                        val = rslt.substring(x1+4, x2).getDoubleValue();
+                                        schematic.addAndMakeVisible(leafComponents.add(new Capacitor()));
+                                        leafComponents.getLast()->setName(name);
+                                        ((Capacitor*)(leafComponents.getLast()))->setC(val);
+                                        if(ang !=0) for(int i=0; i<ang; i++) leafComponents.getLast()->rotateComponent();
+                                        leafComponents.getLast()->setBounds(x,y,100,100);
+                                        leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
+                                        leafComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
+                                        leafComponents.getLast()->componentIsSelectedCallBack = componentIsSelectedCallBack;
+                                        break;
+                                    case ComponentType::A_SER:
+                                        schematic.addAndMakeVisible(leafComponents.add(new Series()));
+                                        leafComponents.getLast()->setName(name);
+                                        if(ang !=0) for(int i=0; i<ang; i++) leafComponents.getLast()->rotateComponent();
+                                        leafComponents.getLast()->setBounds(x,y,100,100);
+                                        leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
+                                        leafComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
+                                        leafComponents.getLast()->componentIsSelectedCallBack = componentIsSelectedCallBack;
+                                        break;
+                                    case ComponentType::A_PAR:
+                                        schematic.addAndMakeVisible(leafComponents.add(new Parallel()));
+                                        leafComponents.getLast()->setName(name);
+                                        if(ang !=0) for(int i=0; i<ang; i++) leafComponents.getLast()->rotateComponent();
+                                        leafComponents.getLast()->setBounds(x,y,100,100);
+                                        leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
+                                        leafComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
+                                        leafComponents.getLast()->componentIsSelectedCallBack = componentIsSelectedCallBack;
+                                        break;
+                                    case ComponentType::L_VOL:
+                                        schematic.addAndMakeVisible(leafComponents.add(new VoltageSource()));
+                                        leafComponents.getLast()->setName(name);
+                                        x1 = rslt.indexOf("vs");
+                                        x2 = rslt.indexOfChar(x1,',');
+                                        val = rslt.substring(x1+3, x2).getDoubleValue();
+                                        ((VoltageSource*)leafComponents.getLast())->setVs(val);
+                                        x1 = rslt.indexOf("rs");
+                                        x2 = rslt.indexOfChar(x1,'<');
+                                        val = rslt.substring(x1+3, x2).getDoubleValue();
+                                        ((VoltageSource*)leafComponents.getLast())->setRs(val);
+                                        if(ang !=0) for(int i=0; i<ang; i++) leafComponents.getLast()->rotateComponent();
+                                        leafComponents.getLast()->setBounds(x,y,100,100);
+                                        leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
+                                        leafComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
+                                        leafComponents.getLast()->componentIsSelectedCallBack = componentIsSelectedCallBack;
+                                        break;
+                                    case ComponentType::A_INV:
+                                        schematic.addAndMakeVisible(leafComponents.add(new Inverter()));
+                                        leafComponents.getLast()->setName(name);
+                                        if(ang !=0) for(int i=0; i<ang; i++) leafComponents.getLast()->rotateComponent();
+                                        leafComponents.getLast()->setBounds(x,y,100,100);
+                                        leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
+                                        leafComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
+                                        leafComponents.getLast()->componentIsSelectedCallBack = componentIsSelectedCallBack;
+                                        break;
+                                    case ComponentType::SR_SHC:
+                                        simpleRoot = std::make_unique<ShortCircuit>();
+                                        simpleRoot->setName(name);
+                                        schematic.addAndMakeVisible(simpleRoot.get());
+                                        if(ang !=0) for(int i=0; i<ang; i++) simpleRoot->rotateComponent();
+                                        simpleRoot->setBounds(x,y,100,100);
+                                        simpleRoot->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
+                                        simpleRoot->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
+                                        simpleRoot->componentIsSelectedCallBack = componentIsSelectedCallBack;
+                                        wantsToConnect_(simpleRoot.get());
+                                        break;
+                                    case ComponentType::SR_VOL:
+                                        simpleRoot = std::make_unique<IdealVoltageSource>();
+                                        simpleRoot->setName(name);
+                                        schematic.addAndMakeVisible(simpleRoot.get());
+                                        if(ang !=0) for(int i=0; i<ang; i++) simpleRoot->rotateComponent();
+                                        simpleRoot->setBounds(x,y,100,100);
+                                        simpleRoot->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
+                                        simpleRoot->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
+                                        simpleRoot->componentIsSelectedCallBack = componentIsSelectedCallBack;
+                                        wantsToConnect_(simpleRoot.get());
+                                        break;
+                                    case ComponentType::R_RNODE:
+                                        x1 = rslt.indexOf("collums");
+                                        x2 = rslt.indexOfChar(x1,'<');
+                                        rNode = std::make_unique<RNodeRootComponent>(rslt.substring(x1, x2));
+                                        rNode->setName(name);
+                                        schematic.addAndMakeVisible(rNode.get());
+                                        if(ang !=0) for(int i=0; i<ang; i++) rNode->rotateComponent();
+                                        rNode->setTopLeftPosition(x, y);
+                                        rNode->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
+                                        rNode->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
+                                        rNode->componentIsSelectedCallBack = componentIsSelectedCallBack;
+                                        wantsToConnect_(rNode.get());
+                                        break;
+                                }
+                                if(leafComponents.size()>0) wantsToConnect_(leafComponents.getLast());
+                            }
+                            
+                        }
+                        //std::cout << fileInStream->readNextLine() << std::endl;
+                    }
+                    
+                    
+                }
+                else std::cout << "file can't be opened" << std::endl;
+            });
+            
+            
+            
+//            leafComponents.clear();
+//
+//            fileInStream = file.createInputStream();
+//
+//            while(fileInStream->isExhausted() != true){
+//                rslt = fileInStream->readNextLine();
+//                //rslt.substring(1,)
+//                int x1 = rslt.indexOfChar('<');
+//                int x2 = rslt.indexOfChar('>');
+//                if(x1 != -1 && x2 != -1){
+//                    int componentTypeIndex = std::find(ComponentTypeStringVector.begin(),ComponentTypeStringVector.end(),rslt.substring(x1+1, x2)) - ComponentTypeStringVector.begin();
+//                    //std::cout << componentTypeIndex << std::endl;
+//                    //std::cout << rslt.substring(x1+1, x2) <<  "enum:" << ComponentTypeStringVector[componentTypeIndex] << std::endl;
+//
+//                    x1 = rslt.indexOf("name");
+//                    x2 = rslt.indexOfChar('x');
+//                    juce::String name = rslt.substring(x1+5, x2-1);
+//
+//                    x1 = rslt.indexOfChar('x');
+//                    x2 = rslt.indexOfChar('y');
+//                    int x = rslt.substring(x1+2, x2-1).getIntValue();
+//
+//                    x1 = rslt.indexOfChar('y');
+//                    x2 = rslt.indexOf("ang");
+//                    int y = rslt.substring(x1+2, x2-1).getIntValue();
+//
+//                    x1 = rslt.indexOf("ang");
+//                    x2 = rslt.indexOfChar(x1,',');
+//                    if(x2<0){
+//                        x2 = rslt.indexOfChar(x1,'<');
+//                    }
+//                    int ang = round((rslt.substring(x1+4, x2).getFloatValue())/(juce::MathConstants<float>::halfPi));
+//                    std::cout << rslt.substring(x1+4, x2) << std::endl;
+//                    std::cout << ang << std::endl;
+//
+//                    double val;
+//
+//
+//                    if(componentTypeIndex != ComponentTypeStringVector.size()){
+//                        std::function<void(CircuitComponent*c)> componentIsSelectedCallBack = [this] (CircuitComponent*c)
+//                        {
+//                            for(auto c : selectedComponents){
+//
+//                                c->unSelectComponent();
+//                            }
+//                            selectedComponents.clear();
+//                            selectedComponents.push_back(c);
+//                        };
+//                        switch(componentTypeIndex){
+//                            case ComponentType::L_RES:
+//                                x1 = rslt.indexOf("res");
+//                                x2 = rslt.indexOfChar(x1,'<');
+//                                val = rslt.substring(x1+4, x2).getDoubleValue();
+//                                schematic.addAndMakeVisible(leafComponents.add(new Resistor()));
+//                                leafComponents.getLast()->setName(name);
+//                                ((Resistor*)(leafComponents.getLast()))->setR(val);
+//                                if(ang !=0) for(int i=0; i<ang; i++) leafComponents.getLast()->rotateComponent();
+//                                leafComponents.getLast()->setBounds(x,y,100,100);
+//                                leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
+//                                leafComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
+//                                leafComponents.getLast()->componentIsSelectedCallBack = componentIsSelectedCallBack;
+//                                break;
+//
+//                            case ComponentType::L_CAP:
+//                                x1 = rslt.indexOf("cap");
+//                                x2 = rslt.indexOfChar(x1,'<');
+//                                val = rslt.substring(x1+4, x2).getDoubleValue();
+//                                schematic.addAndMakeVisible(leafComponents.add(new Capacitor()));
+//                                leafComponents.getLast()->setName(name);
+//                                ((Capacitor*)(leafComponents.getLast()))->setC(val);
+//                                if(ang !=0) for(int i=0; i<ang; i++) leafComponents.getLast()->rotateComponent();
+//                                leafComponents.getLast()->setBounds(x,y,100,100);
+//                                leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
+//                                leafComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
+//                                leafComponents.getLast()->componentIsSelectedCallBack = componentIsSelectedCallBack;
+//                                break;
+//                            case ComponentType::A_SER:
+//                                schematic.addAndMakeVisible(leafComponents.add(new Series()));
+//                                leafComponents.getLast()->setName(name);
+//                                if(ang !=0) for(int i=0; i<ang; i++) leafComponents.getLast()->rotateComponent();
+//                                leafComponents.getLast()->setBounds(x,y,100,100);
+//                                leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
+//                                leafComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
+//                                leafComponents.getLast()->componentIsSelectedCallBack = componentIsSelectedCallBack;
+//                                break;
+//                            case ComponentType::A_PAR:
+//                                schematic.addAndMakeVisible(leafComponents.add(new Parallel()));
+//                                leafComponents.getLast()->setName(name);
+//                                if(ang !=0) for(int i=0; i<ang; i++) leafComponents.getLast()->rotateComponent();
+//                                leafComponents.getLast()->setBounds(x,y,100,100);
+//                                leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
+//                                leafComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
+//                                leafComponents.getLast()->componentIsSelectedCallBack = componentIsSelectedCallBack;
+//                                break;
+//                            case ComponentType::L_VOL:
+//                                schematic.addAndMakeVisible(leafComponents.add(new VoltageSource()));
+//                                leafComponents.getLast()->setName(name);
+//                                x1 = rslt.indexOf("vs");
+//                                x2 = rslt.indexOfChar(x1,',');
+//                                val = rslt.substring(x1+3, x2).getDoubleValue();
+//                                ((VoltageSource*)leafComponents.getLast())->setVs(val);
+//                                x1 = rslt.indexOf("rs");
+//                                x2 = rslt.indexOfChar(x1,'<');
+//                                val = rslt.substring(x1+3, x2).getDoubleValue();
+//                                ((VoltageSource*)leafComponents.getLast())->setRs(val);
+//                                if(ang !=0) for(int i=0; i<ang; i++) leafComponents.getLast()->rotateComponent();
+//                                leafComponents.getLast()->setBounds(x,y,100,100);
+//                                leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
+//                                leafComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
+//                                leafComponents.getLast()->componentIsSelectedCallBack = componentIsSelectedCallBack;
+//                                break;
+//                            case ComponentType::SR_SHC:
+//                                simpleRoot = std::make_unique<ShortCircuit>();
+//                                simpleRoot->setName("Shrt1");
+//                                schematic.addAndMakeVisible(simpleRoot.get());
+//                                if(ang !=0) for(int i=0; i<ang; i++) simpleRoot->rotateComponent();
+//                                simpleRoot->setBounds(x,y,100,100);
+//                                simpleRoot->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
+//                                simpleRoot->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
+//                                simpleRoot->componentIsSelectedCallBack = componentIsSelectedCallBack;
+//                                wantsToConnect_(simpleRoot.get());
+//                                break;
+//                            case ComponentType::SR_VOL:
+//                                simpleRoot = std::make_unique<IdealVoltageSource>();
+//                                simpleRoot->setName("V1");
+//                                schematic.addAndMakeVisible(simpleRoot.get());
+//                                if(ang !=0) for(int i=0; i<ang; i++) simpleRoot->rotateComponent();
+//                                simpleRoot->setBounds(x,y,100,100);
+//                                simpleRoot->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
+//                                simpleRoot->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
+//                                simpleRoot->componentIsSelectedCallBack = componentIsSelectedCallBack;
+//                                wantsToConnect_(simpleRoot.get());
+//                                break;
+//                        }
+//                        if(leafComponents.size()>0) wantsToConnect_(leafComponents.getLast());
+//                    }
+//
+//                }
+//                //std::cout << fileInStream->readNextLine() << std::endl;
+//            }
+            
+            
+            
+            
+            break;
+        case CommandIDs::fileSave:
+            file.deleteFile();
+            fileOutStream = file.createOutputStream();
+            
+            for(auto l: leafComponents){
+                //if(l->isComponentConnected()==false){
+                    std::cout << l->getInfo() << std::endl;
+                    if(fileOutStream != nullptr)fileOutStream->writeText(l->getInfo()+"\n", false, false,lineEnd);
+                //}
+            }
+            if(simpleRoot != nullptr){
+                std::cout << simpleRoot->getInfo();
+                if(fileOutStream != nullptr)fileOutStream->writeText(simpleRoot->getInfo()+"\n", false, false,lineEnd);
+            }
+            
+            if(rNode != nullptr){
+                std::cout << rNode->getInfo();
+                if(fileOutStream != nullptr)fileOutStream->writeText(rNode->getInfo()+"\n", false, false,lineEnd);
+            }
+            
+            fileOutStream.reset();
+            break;
+        case CommandIDs::fileSaveAs:
+            
+            fc.reset(new juce::FileChooser("",appDataPath,"*",true));
+            
+            fc->launchAsync ( juce::FileBrowserComponent::saveMode
+                                             | juce::FileBrowserComponent::canSelectFiles,
+                                         [this] (const juce::FileChooser& chooser)
+                                         {
+                                             juce::String chosen;
+                                             auto results = chooser.getURLResults();
+
+                                             for (auto result : results)
+                                                 chosen << (result.isLocalFile() ? result.getLocalFile().getFullPathName()
+                                                                                 : result.toString (false)) << "\n";
+                                            
+                                            auto file = chooser.getResult();
+                                            std::cout << file.getFullPathName() << std::endl;
+                if(file.getFileExtension() == ".txt"){
+//                    auto fileOutStream = file.createOutputStream();
+//                    if(fileOutStream != nullptr)fileOutStream->writeText(l1.getText(), false, false,nullptr);
+//                    fileOutStream.reset();
+                }
+                else std::cout << "file can't be opened" << std::endl;
+                });
+            
+            
+            
+            break;
+        case CommandIDs::editCopy:
+//            controlPanel.setBounds(0, getHeight()-30, getWidth(), 30);
+//            frontPanel.setBounds(0,getHeight()-250,getWidth(),250 - 30);
+//
+//            if(propertyPanelShowHide){
+//                viewPort.setBounds(0, 0, getWidth()-250, getHeight()-160);
+//                propertyPanelViewPort.setBounds(getWidth()-250,0,250,getHeight()-160);
+//                propertyPanelViewPort.setVisible(true);
+//            }
+//            else{
+//                viewPort.setBounds(0, 0, getWidth(), getHeight()-250);
+//                propertyPanelViewPort.setVisible(false);
+//            }
+            
+            if(rNode != nullptr) std::cout << rNode->getInfo() << std::endl;
+            
+            break;
+        default:
+            return false;
+    }
+    return true;
+}
+
+bool MainComponent::keyPressed(const juce::KeyPress &key, juce::Component * originatingComponent){
+    if(key.isKeyCode(juce::KeyPress::backspaceKey)){
+        std::cout << "delete pressed " << std::endl;
+        for(auto c : selectedComponents){
+            if(leafComponents.contains((AdaptedLeafComponent*)c)) {
+                leafComponents.removeObject((AdaptedLeafComponent*)c);
+            }
+            if(c == simpleRoot.get()) simpleRoot.reset();
+        }
+        selectedComponents.clear();
+    }
+    if(key.isKeyCode(juce::KeyPress::escapeKey)){
+        for(auto c: selectedComponents){
+            c->unSelectComponent();
+        }
+        selectedComponents.clear();
+    }
+    return true;
 }

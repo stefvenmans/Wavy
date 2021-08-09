@@ -52,7 +52,7 @@ wdfRootNode * SimpleRootComponent::createWDFComponent() {
     return root.get();
 }
 
-void SimpleRootComponent::connect(CircuitComponent* c) {
+int SimpleRootComponent::connect(CircuitComponent* c) {
     //Check if at right side
     auto index = 0;
     bool connectSuccesfull = false;
@@ -91,7 +91,7 @@ void SimpleRootComponent::connect(CircuitComponent* c) {
             isConnected[index] = true;
             std::cout << "child set" << std::endl;
             child = (AdaptedLeafComponent*)c;
-            return;
+            return 1;
         }
         index++;
     }

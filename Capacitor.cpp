@@ -40,3 +40,9 @@ void Capacitor::setT(double newT){
 double Capacitor::getT(){
     return T;
 }
+
+juce::String Capacitor::getInfo(){
+    juce::String result;
+    result = juce::String("<L_CAP>") + "name=" + getName() + "," + "x="  +  juce::String(getX()) + "," + "y=" + juce::String(getY()) + "," + "ang=" + juce::String(angle) + "," + "cap=" + juce::String(getC()) + "</L_CAP>";
+    return result;
+}

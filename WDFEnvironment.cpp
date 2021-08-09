@@ -24,7 +24,7 @@ double WdfEnvironment::getOutputValue( ){
 }
 int WdfEnvironment::setRootMatrData( matData* rootMatrixData, double *Rp ){
     if(getRNodeMatLambda != nullptr){
-        Smat = getRNodeMatLambda(Rp);
+        Smat = getRNodeMatLambda(rootMatrixData,Rp);
     }
     for ( unsigned int ii = 0; ii < Smat.n_cols; ++ii ) {
             for ( unsigned int jj = 0; jj < Smat.n_rows; ++jj ) {
@@ -50,6 +50,17 @@ void WdfEnvironment::setSubtreeEntryNodes(std::vector<wdfTreeNode*> nodes){
         subtreeEntryNodes[i] = nodes[i];
     }
     root.reset(new wdfRootRtype(subtreeCount));
+    Rp = new double[subtreeCount]();
+}
+
+void WdfEnvironment::setSubtreeEntryNodes(std::vector<wdfTreeNode*> nodes, std::vector<int> nlList){
+    subtreeCount = nodes.size();
+    subtreeEntryNodes = new wdfTreeNode*[subtreeCount];
+    for(auto i=0; i<nodes.size(); i++){
+        subtreeEntryNodes[i] = nodes[i];
+    }
+    
+    root.reset(new wdfRootNL(subtreeCount,nlList,1));
     Rp = new double[subtreeCount]();
 }
 

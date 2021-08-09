@@ -17,4 +17,6 @@ public:
     Transistor();
     void paint (juce::Graphics& g) override;
     int getCollums() override;
+    int connect(CircuitComponent* c) override ;
+    ComponentType getComponentType() override;
 };

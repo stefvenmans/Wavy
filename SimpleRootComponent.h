@@ -18,7 +18,7 @@ public:
     SimpleRootComponent(juce::String svgFileName);
     void paint(juce::Graphics& g) override;
     virtual wdfRootNode * createWDFComponent() ;
-    void connect(CircuitComponent* c) override ;
+    int connect(CircuitComponent* c) override ;
     AdaptedLeafComponent* getChildComponent();
     int isRootOrNonLin() override;
     
