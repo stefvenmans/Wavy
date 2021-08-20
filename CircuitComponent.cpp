@@ -18,24 +18,16 @@ CircuitComponent::CircuitComponent(juce::String svgFileName) : svgFileName{svgFi
     if (svgDrawable != nullptr)
     {
         if (auto svgDrawableComposite = dynamic_cast<juce::DrawableComposite*> (svgDrawable.get())){
-            svgDrawableComposite->setBoundingBox ({ static_cast<float>(getX()+10), static_cast<float>(getY()+10), 80.0f, 80.0f });
+            svgDrawableComposite->setBoundingBox ({ static_cast<float>(getX()+componentOffset), static_cast<float>(getY()+componentOffset), static_cast<float>(componentWidth-2*componentOffset), static_cast<float>(componentHeight-2*componentOffset) });
         }
     }
 }
 
 void CircuitComponent::paint (juce::Graphics& g)
 {
-    //g.fillAll(juce::Colours::white);
-    if(rotate){
-        angle += juce::MathConstants<float>::halfPi;
-        if(angle >= juce::MathConstants<float>::twoPi) angle = 0;
-        rotate = false;
-    }
-    
     if(componentIsSelected){
-        g.setColour(juce::Colour((juce::uint8)0, (juce::uint8)0, (juce::uint8)80, (juce::uint8)50));
-        g.fillRect(10, 10, 80, 80);
-        std::cout << "dbg" << std::endl;
+        g.setColour(juce::Colour((juce::uint8)0, (juce::uint8)0, (juce::uint8)(80), (juce::uint8)50));
+        g.fillRect(10, 10, componentWidth-2*componentOffset, componentHeight-2*componentOffset);
     }
     
     svgDrawable->draw (g, getAlpha(), getTransform().rotated(angle, getWidth()/2, getHeight()/2));
@@ -46,7 +38,7 @@ void CircuitComponent::paintSVG(juce::Graphics& g)
 {
     if(componentIsSelected){
         g.setColour(juce::Colour((juce::uint8)0, (juce::uint8)10, (juce::uint8)50, (juce::uint8)20));
-        g.fillRect(10, 10, 80, 80);
+        g.fillRect(10, 10, componentWidth-2*componentOffset, componentHeight-2*componentOffset);
         g.setColour(juce::Colours::black);
     }
     
@@ -68,7 +60,6 @@ int CircuitComponent::getRows(){
 }
 
 void CircuitComponent::rotateComponent(){
-    //rotate = true;
     shooldDrag = false;
     
     angle += juce::MathConstants<float>::halfPi;
@@ -85,9 +76,13 @@ void CircuitComponent::mouseDown(const juce::MouseEvent& e)
 {
     lastX = getX();
     lastY = getY();
+    
+    //Rotate
     if(e.mods.isCommandDown() && e.mods.isShiftDown()){
         rotateComponent();
     }
+    
+    //Open property panel
     else if(e.mods.isCommandDown()){
         shooldDrag = false;
         if(propertyPanelCallback != nullptr){
@@ -101,16 +96,14 @@ void CircuitComponent::mouseDown(const juce::MouseEvent& e)
 void CircuitComponent::mouseDrag(const juce::MouseEvent& e)
 {
     if(shooldDrag == true) dragger.dragComponent (this, e, &constrainer);
-    // should check if component moved
+    
+    //Disconnect component if moved. TODO: disconnect all neighbour components
     if(getX()!=lastX || getY()!=lastY){
         for(auto c: isConnected){
             c = false;
         }
-        // get all child components and diconnect them
-        //std::cout << "disconnect all" << std::endl;
         repaint();
     }
-    
 }
 
 void CircuitComponent::mouseUp(const juce::MouseEvent& e)
@@ -119,6 +112,7 @@ void CircuitComponent::mouseUp(const juce::MouseEvent& e)
     const int height = componentHeight;
     const int x = getX();
     const int y = getY();
+    
     if(x % width >= width/2){
         if(getY() % height >= height/2){
             setBounds(x + width - x % width, y + height - y % height, width*getCollums(), height*getRows());
@@ -148,19 +142,16 @@ void CircuitComponent::mouseUp(const juce::MouseEvent& e)
     }
     shooldDrag = true;
     
-    
-    
-    if(callBack != NULL){
-        if(callBack(this)){
+    //See if this component can connect to other components around it.
+    if(wantToConnectCallback != NULL){
+        if(wantToConnectCallback(this)){
             //isConnected = true;
         }
     }
-    
-    
+
 }
 
 void CircuitComponent::mouseDoubleClick(const juce::MouseEvent &e){
-    std::cout << "mouse double clicked" << std::endl;
     if(propertyPanelCallback != nullptr){
         propertyPanelCallback(this);
     }
@@ -168,7 +159,7 @@ void CircuitComponent::mouseDoubleClick(const juce::MouseEvent &e){
 
 void CircuitComponent::addHandler(std::function<bool(CircuitComponent* c)> clbk)
 {
-    callBack = clbk;
+    wantToConnectCallback = clbk;
 }
 
 float CircuitComponent::getRotationX()
@@ -182,7 +173,7 @@ float CircuitComponent::getRotationY()
 }
 
 int CircuitComponent::connect(CircuitComponent* c){
-    
+    return -1;
 }
 
 bool CircuitComponent::hasOrientation(int orientation){
@@ -196,8 +187,8 @@ ComponentType CircuitComponent::getComponentType(){
     return ComponentType::NOT_SET;
 }
 
-void CircuitComponent::setPropertyPanelCallback(std::function<void(CircuitComponent* c)> callbackFunction){
-    propertyPanelCallback = callbackFunction;
+void CircuitComponent::setPropertyPanelCallback(std::function<void(CircuitComponent* c)> clbk){
+    propertyPanelCallback = clbk;
 }
     
 juce::String CircuitComponent::getName(){
@@ -208,7 +199,6 @@ void CircuitComponent::setName(juce::String name){
     componentName = name;
     repaint();
 }
-
 
 //0 for leaf, 1 for simple root, 2 for non-lin root
 int CircuitComponent::isRootOrNonLin(){
@@ -224,16 +214,13 @@ juce::Slider* CircuitComponent::getControl(){
 }
 
 juce::String CircuitComponent::getInfo(){
-    return "CircuitComponent";
+    juce::String result;
+    result = juce::String("<") + ComponentTypeString[getComponentType()] +">" + "name=" + getName() + "," + "x="  +  juce::String(getX()) + "," + "y=" + juce::String(getY()) + "," + "ang=" + juce::String(angle);
+    result += "</"+ComponentTypeString[getComponentType()]+">";
+    return result;
 }
 
 bool CircuitComponent::isComponentConnected(){
-//    int i=0;
-//    for(auto b : isConnected){
-//        if(b) i+=1;
-//    }
-//    if (i==isConnected.size()) return true;
-//    else return false;
     if(isConnected.back()) return true;
     else return false;
 }

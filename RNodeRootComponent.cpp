@@ -12,8 +12,8 @@
 
 RNodeRootComponent::RNodeRootComponent() : CircuitComponent(""){
     
-    collums = 2;
-    rows = 2;
+    collums = 1;
+    rows = 1;
     setSize(collums*componentWidth,rows*componentHeight);
     
     //North
@@ -30,34 +30,34 @@ RNodeRootComponent::RNodeRootComponent() : CircuitComponent(""){
         }
     }
     //East
-    for(auto i=0; i<rows; i++){
-        portOrientations.push_back(1);
-        isConnected.push_back(false);
-        childs.push_back(nullptr);
-        //Create connection points
-        for(auto j=0; j<2 ; j++){
-            gridSize = (getHeight()-2*borderOffset)/(rows*2-1);
-            portConnectionPoints.add(new juce::Point<float>(getWidth()-11,getYGrid(borderOffset+j*gridSize + i*componentHeight)));
-            resistorStampIndexes.push_back(-1);
-            voltageSourceStampIndexes.push_back(-1);
-        }
-
-    }
-    //South
-//    for(auto i=0; i<collums; i++){
-//        portOrientations.push_back(2);
+//    for(auto i=0; i<rows; i++){
+//        portOrientations.push_back(1);
 //        isConnected.push_back(false);
 //        childs.push_back(nullptr);
 //        //Create connection points
 //        for(auto j=0; j<2 ; j++){
-//            gridSize = (getWidth()-2*borderOffset)/(collums*2-1);
-//            std::cout << " ! " << borderOffset+(collums*2-1-j)*gridSize << std::endl;
-//            portConnectionPoints.add(new juce::Point<float>(getXGrid(borderOffset+(collums*2-1-j)*gridSize - i*componentWidth),getHeight()-11));
+//            gridSize = (getHeight()-2*borderOffset)/(rows*2-1);
+//            portConnectionPoints.add(new juce::Point<float>(getWidth()-11,getYGrid(borderOffset+j*gridSize + i*componentHeight)));
 //            resistorStampIndexes.push_back(-1);
 //            voltageSourceStampIndexes.push_back(-1);
 //        }
 //
 //    }
+    //South
+    for(auto i=0; i<collums; i++){
+        portOrientations.push_back(2);
+        isConnected.push_back(false);
+        childs.push_back(nullptr);
+        //Create connection points
+        for(auto j=0; j<2 ; j++){
+            gridSize = (getWidth()-2*borderOffset)/(collums*2-1);
+            std::cout << " ! " << borderOffset+(collums*2-1-j)*gridSize << std::endl;
+            portConnectionPoints.add(new juce::Point<float>(getXGrid(borderOffset+(collums*2-1-j)*gridSize - i*componentWidth),getHeight()-11));
+            resistorStampIndexes.push_back(-1);
+            voltageSourceStampIndexes.push_back(-1);
+        }
+
+    }
     //West
     for(auto i=0; i<rows; i++){
         portOrientations.push_back(3);
@@ -264,6 +264,10 @@ RNodeRootComponent::RNodeRootComponent(juce::String data) : CircuitComponent("")
         }
     }
     
+    x1 = data.indexOf("numberOfNodes");
+    x2 = data.indexOfChar(x1,'}');
+    subString = data.substring(x1 + juce::String("numberOfNodes={").length(), x2);
+    numberOfNodes = subString.getIntValue();
     
 }
 
@@ -993,6 +997,10 @@ juce::String RNodeRootComponent::getInfo(){
         result += juce::String(n);
         firstPoint = false;
     }
+    result += "}";
+    
+    result += ",numberOfNodes={";
+    result += juce::String(numberOfNodes);
     result += "}";
     
     result += "</"+ComponentTypeString[getComponentType()]+">";

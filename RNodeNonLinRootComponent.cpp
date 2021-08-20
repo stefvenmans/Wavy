@@ -712,6 +712,9 @@ mat RNodeNonLinRootComponent::calculateScatteringMatrix(matData* rootMatrixData,
     mat C21 = C.submat(i2+1, i1, i3, i2);
     mat C22 = C.submat(i2+1, i2+1, i3, i3);
     
+    mat subMat = Ii-C22*S11;
+    subMat.raw_print();
+    
     mat H = inv(Ii-C22*S11);
     
     mat E = C12*(Ii+S11*H*C22)*S12;
@@ -719,11 +722,16 @@ mat RNodeNonLinRootComponent::calculateScatteringMatrix(matData* rootMatrixData,
     mat M = S21*H*C22*S12+S22;
     mat N = S21*H*C21;
     
-    rootMatrixData->Emat = normalise(E);
-    rootMatrixData->Fmat = normalise(F);
-    rootMatrixData->Mmat = normalise(M);
-    rootMatrixData->Nmat = normalise(N);
+//    rootMatrixData->Emat = normalise(E);
+//    rootMatrixData->Fmat = normalise(F);
+//    rootMatrixData->Mmat = normalise(M);
+//    rootMatrixData->Nmat = normalise(N);
     
+    rootMatrixData->Emat = E;
+    rootMatrixData->Fmat = F;
+    rootMatrixData->Mmat = M;
+    rootMatrixData->Nmat = N;
+
     std::cout << "E Mat" <<std::endl;
     rootMatrixData->Emat.print();
     std::cout << "F Mat" <<std::endl;
@@ -753,6 +761,9 @@ std::vector<int> RNodeNonLinRootComponent::getNLlist(){
     for(auto i=0; i<roots.size(); i++){
         if(roots[i]->getComponentType() == NL_DIO){
             nlList.push_back(DIODE);
+        }
+        if(roots[i]->getComponentType() == NL_ADIO){
+            nlList.push_back(DIODE_AP);
         }
         if(roots[i]->getComponentType() == NL_TRAN){
             nlList.push_back(NPN_EM);

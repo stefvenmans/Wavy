@@ -11,6 +11,7 @@
 #include "OnePortComponent.h"
 #include "Resistor.h"
 #include "Capacitor.h"
+#include "Inductor.h"
 #include "VoltageSource.h"
 #include "TwoPortComponent.h"
 #include "Inverter.h"
@@ -26,6 +27,7 @@
 #include "Diode.h"
 #include "Transistor.h"
 #include "RNodeNonLinRootComponent.h"
+#include "AntiDiodePair.h"
 
 #include "FrontPanel.h"
 #include "Schematic.h"
@@ -155,6 +157,7 @@ private:
     juce::AudioFormatManager formatManager;
     juce::AudioSampleBuffer buffer_in;
     juce::AudioSampleBuffer buffer_out;
+    juce::File outputCSV;
     juce::AudioFormatReader *reader;
     
     mat Smat;

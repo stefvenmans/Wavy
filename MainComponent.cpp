@@ -67,7 +67,7 @@ MainComponent::MainComponent()
     std::vector<double> impulse;
     for(int i=0; i<inputSignalDuration*44100; i++){
         if(i==0){
-            impulse.push_back(1);
+            impulse.push_back(44100);
         }
         else{
             impulse.push_back(0);
@@ -163,6 +163,8 @@ MainComponent::MainComponent()
     componentSelector.addItem("Diode", 13);
     componentSelector.addItem("Transistor",14);
     componentSelector.addItem("R Node Non Lin", 15);
+    componentSelector.addItem("Anti Diode Pair", 16);
+    componentSelector.addItem("Inductor", 17);
     addAndMakeVisible(componentSelector);
     
     
@@ -288,6 +290,22 @@ MainComponent::MainComponent()
                 rNodeRootNonLin->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
                 rNodeRootNonLin->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
                 break;
+            case 16:
+                schematic.addAndMakeVisible(nonLinearComponents.add(new AntiDiodePair()));
+                nonLinearComponents.getLast()->setName("D1");
+                nonLinearComponents.getLast()->setBounds(20,20,100,100);
+                nonLinearComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
+                nonLinearComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
+                break;
+                
+            case 17:
+                schematic.addAndMakeVisible(leafComponents.add(new Inductor()));
+                leafComponents.getLast()->setName("L1");
+                leafComponents.getLast()->setBounds(20,20,100,100);
+                leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
+                leafComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
+                leafComponents.getLast()->componentIsSelectedCallBack = componentIsSelectedCallBack;
+                break;
         }
     };
     
@@ -308,6 +326,7 @@ MainComponent::MainComponent()
     freqSlider.onDragEnd = [this](){
         osc.setFrequency(freqSlider.getValue());
     };
+    freqSlider.setVisible(false);
     
     wdfEnvironment.addParam(res1Val);
     
@@ -360,6 +379,18 @@ MainComponent::MainComponent()
 //                writeAudio();
 //            }
             //else {
+            
+            if(inputSignalType < 0){
+                if(inputIndex != -1){
+                    //wdfEnvironment.initTree();
+                    wdfEnvironment.adaptTree();
+                    readAudio();
+                    processAudio();
+                    writeAudio();
+                }
+            }
+            else{
+            wdfEnvironment.adaptTree();
                 
                 std::vector<double> signalToPlotIn;
                 std::vector<double> signalToPlotOut;
@@ -367,20 +398,17 @@ MainComponent::MainComponent()
                 
                 for(auto i=0; i<inputSignalDuration*44100; i++){
                 if(inputIndex != -1 && inputIndex < leafComponents.size()){
-//                    if(i==0){
-//                        signalToPlotIn.push_back(1);
-//                        ((wdfTerminatedResVSource*)(leafComponents[inputIndex]->getWDFComponent()))->Vs = 1;//bufferIn[i];
-//                    }
-//                    else{
-//                        signalToPlotIn.push_back(0);
-//                        ((wdfTerminatedResVSource*)(leafComponents[inputIndex]->getWDFComponent()))->Vs = 0;//bufferIn[i];
-                    //}
-//                    signalToPlotIn.push_back(std::sin(i*(juce::MathConstants<double>::pi*2.0)/200.0));
-//                    ((wdfTerminatedResVSource*)(leafComponents[inputIndex]->getWDFComponent()))->Vs = std::sin(i*(juce::MathConstants<double>::pi*2.0)/200.0);//bufferIn[i];
-                    
                     ((wdfTerminatedResVSource*)(leafComponents[inputIndex]->getWDFComponent()))->Vs = inputSignals[inputSignalType][i];//bufferIn[i];
                 }
-                wdfEnvironment.cycleWave();
+                    
+                try{
+                    wdfEnvironment.cycleWave();
+                }
+                    
+                    catch (const std::exception &e){
+                        return;
+                    }
+                    
                 if(outputIndex != -1 && outputIndex < leafComponents.size()){
                     //std::cout << -leafComponents[outputIndex]->getWDFComponent()->upPort->getPortVoltage() << std::endl;
                     
@@ -394,12 +422,6 @@ MainComponent::MainComponent()
                 
             //}
             
-            if(inputIndex != -1){
-                //wdfEnvironment.initTree();
-                wdfEnvironment.adaptTree();
-                readAudio();
-                processAudio();
-                writeAudio();
             }
             
         }
@@ -412,6 +434,7 @@ MainComponent::MainComponent()
         std::cout << std::endl;
     };
     runSimulationButton.setButtonText("Run");
+    runSimulationButton.setVisible(false);
     
     //Menubar
     menuBar.reset(new juce::MenuBarComponent(this));
@@ -671,7 +694,7 @@ void MainComponent::resized()
     freqSlider.setBounds(160,getHeight()-30,150,30);
     componentSelector.setBounds(20,20,100,30);
     //calculateMatButton.setBounds(getWidth()-350,40*2+80+60,50,50);
-    calculateRaw.setBounds(50, getHeight()-30, 100, 30);
+    calculateRaw.setBounds(0, getHeight()-30, 100, 30);
     runSimulationButton.setBounds(getWidth()-350, getHeight()-30, 50, 30);
     
 //    for (auto x = 0; x < numX; ++x)
@@ -714,8 +737,35 @@ void MainComponent::mouseMagnify (const juce::MouseEvent &event, float scaleFact
 
 
 void MainComponent::readAudio(){
-    buffer_in.setSize(1, (int)reader->lengthInSamples);
-    reader->read(&buffer_in, 0, (int)reader->lengthInSamples, 0, true, false);
+//    buffer_in.setSize(1, (int)reader->lengthInSamples);
+//    std::cout << "number of samples input :  " << (int)reader->lengthInSamples << std::endl;
+//    std::cout << "buffer nr of samples : " << buffer_in.getNumSamples() << std::endl;
+//    reader->read(&buffer_in, 0, (int)reader->lengthInSamples, 0, true, false);
+    
+    juce::File inputCSV = appDataPath.getChildFile("inputWDF.csv");
+    auto audioInStream = inputCSV.createInputStream();
+    char lineEnd [] = {'\n',0};
+    juce::String sample;
+    double input;
+    juce::String rslt;
+    int i=0;
+    juce::AudioBuffer<float>::SampleType *inputBuffer;
+    
+    if(audioInStream != nullptr){
+        rslt = audioInStream->readNextLine();
+        buffer_in.setSize(1,rslt.getIntValue());
+        inputBuffer = buffer_in.getWritePointer(0);
+    }
+    
+    while(audioInStream->isExhausted() != true){
+        rslt = audioInStream->readNextLine();
+        inputBuffer[i] = rslt.getDoubleValue();
+        i++;
+    }
+    
+    
+    
+    
 }
 
 void MainComponent::processAudio(){
@@ -726,9 +776,9 @@ void MainComponent::processAudio(){
         //output[i] = wdf->getOutputValue();
         
         if(inputIndex != -1 && inputIndex < leafComponents.size()){
-            ((wdfTerminatedResVSource*)(leafComponents[inputIndex]->getWDFComponent()))->Vs = input[i];
+            //((wdfTerminatedResVSource*)(leafComponents[inputIndex]->getWDFComponent()))->Vs = input[i];
         }
-        wdfEnvironment.cycleWave();
+        //wdfEnvironment.cycleWave();
         
         if(outputIndex != -1 && outputIndex < leafComponents.size()){
             //std::cout << -leafComponents[outputIndex]->getWDFComponent()->upPort->getPortVoltage() << std::endl;
@@ -749,6 +799,36 @@ void MainComponent::writeAudio(){
     if(writer != nullptr){
         std::cout << "audio file written" << std::endl;
         writer->writeFromAudioSampleBuffer(buffer_out, 0, buffer_out.getNumSamples());
+    }
+    
+    
+    //write CSV file
+    
+    outputCSV = appDataPath.getChildFile("output.csv");
+    outputCSV.deleteFile();
+    auto audioOutStream = outputCSV.createOutputStream();
+    char lineEnd [] = {'\n',0};
+    juce::String sample;
+    double input;
+    auto *inputBuffer = buffer_in.getReadPointer(0);
+    
+    wdfEnvironment.adaptTree();
+    if(audioOutStream != nullptr)audioOutStream->writeText(juce::String("output_val")+"\n", false, false,lineEnd);
+    
+    for(auto i=0; i<buffer_in.getNumSamples(); i++){
+        
+//        if(i==0) input = 44100;
+//        else input = 0;
+        
+        if(inputIndex != -1 && inputIndex < leafComponents.size()){
+            ((wdfTerminatedResVSource*)(leafComponents[inputIndex]->getWDFComponent()))->Vs = inputBuffer[i];
+        }
+        wdfEnvironment.cycleWave();
+        if(outputIndex != -1 && outputIndex < leafComponents.size()){
+            double outSample = (-leafComponents[outputIndex]->getWDFComponent()->upPort->getPortVoltage());
+            sample = juce::String(outSample);
+        }
+        if(audioOutStream != nullptr)audioOutStream->writeText(sample+"\n", false, false,lineEnd);
     }
 }
 

@@ -26,5 +26,4 @@ protected:
     std::vector<juce::Line<float>> portArrowsA;
     std::vector<juce::Line<float>> portArrowsB;
     std::vector<bool> isAdapted;
-    //bool isAdapted = true;
 };

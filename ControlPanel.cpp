@@ -26,6 +26,6 @@ ControlPanel::ControlPanel(){
 void ControlPanel::paint (juce::Graphics& g){
     g.setColour(juce::Colours::darkgrey);
     g.fillAll();
-    svgDrawable->draw (g, getAlpha(),getTransform());
+    //svgDrawable->draw (g, getAlpha(),getTransform());
     //std::cout << "All good till here CP" << std::endl;
 }

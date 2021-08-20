@@ -1,58 +1,22 @@
 /*
   ==============================================================================
 
-    SimpleRootComponent.cpp
-    Created: 29 Apr 2021 4:48:37pm
+    Diode.cpp
+    Created: 2 May 2021 6:51:06pm
     Author:  Stef
 
   ==============================================================================
 */
 
-#include "SimpleRootComponent.h"
+#include "AntiDiodePair.h"
 
-SimpleRootComponent::SimpleRootComponent(juce::String svgFileName) : CircuitComponent(svgFileName), child(nullptr)
+AntiDiodePair::AntiDiodePair() : NonLinearComponent("anti-diode.svg")
 {
-    portOrientations.push_back(1);
+    portOrientations.push_back(2);
     isConnected.push_back(false);
 }
 
-void SimpleRootComponent::paint(juce::Graphics& g) 
-{
-    paintSVG(g);
-//        if(isAdapted){
-//            wBLine = juce::Line<float>(80,20, 90+ 10.0f, 20);
-//        }
-//        else{
-//            wBLine = juce::Line<float>(90,20, 90+ 10.0f, 20);
-//        }
-    wBLine = juce::Line<float>(90,20, 90+ 10.0f, 20);
-    
-    auto wALine = juce::Line<float>(100,80, 90, 80);
-    auto wBAdapted = juce::Line<float>(80,15,80,25);
-    
-    wBLine.applyTransform(getTransform().rotated(angle, getWidth()/2, getHeight()/2));
-    wALine.applyTransform(getTransform().rotated(angle, getWidth()/2, getHeight()/2));
-    wBAdapted.applyTransform(getTransform().rotated(angle, getWidth()/2, getHeight()/2));
-    
-    g.drawArrow(wBLine, 1.5, 10,4);
-    g.drawArrow(wALine, 1.5, 10,4);
-    //g.drawLine(wBAdapted,1.5);
-    
-    for(auto c : isConnected){
-        if(c){
-            //g.setColour(juce::Colours::red);
-            //g.drawRect(0,0,100,100,5);
-        }
-    }
-    
-    //std::cout << "port orientation" << portOrientations[0] << std::endl;
-}
-
-wdfRootNode * SimpleRootComponent::createWDFComponent() {
-    return root.get();
-}
-
-int SimpleRootComponent::connect(CircuitComponent* c) {
+int AntiDiodePair::connect(CircuitComponent* c) {
     //Check if at right side
     auto index = 0;
     bool connectSuccesfull = false;
@@ -89,18 +53,14 @@ int SimpleRootComponent::connect(CircuitComponent* c) {
         }
         if(connectSuccesfull){
             isConnected[index] = true;
-            std::cout << "child set" << std::endl;
-            child = (AdaptedLeafComponent*)c;
+            
             return 1;
         }
         index++;
     }
+    return -1;
 }
 
-AdaptedLeafComponent* SimpleRootComponent::getChildComponent(){
-    return child;
-}
-
-int SimpleRootComponent::isRootOrNonLin(){
-    return 1;
+ComponentType AntiDiodePair::getComponentType(){
+    return NL_ADIO;
 }

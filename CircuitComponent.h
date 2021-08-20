@@ -42,21 +42,22 @@ public:
     std::function<void(CircuitComponent*c)> componentIsSelectedCallBack;
     void unSelectComponent();
     
+    
 protected:
     juce::String svgFileName;
-    juce::String componentName;
     std::unique_ptr<juce::Drawable> svgDrawable;
+    juce::String componentName;
     juce::ComponentBoundsConstrainer constrainer;
     juce::ComponentDragger dragger;
     bool rotate = false;
     bool shooldDrag = true;
     float angle = 0;
-    std::function<bool(CircuitComponent* c)> callBack;
+    std::function<bool(CircuitComponent* c)> wantToConnectCallback;
     std::function<void(CircuitComponent* c)> propertyPanelCallback;
     std::vector<int> portOrientations;
+    std::vector<bool> isConnected;
     int sizeX;
     int sizeY;
-    std::vector<bool> isConnected;
     int lastX;
     int lastY;
     juce::Slider* slider;
