@@ -15,6 +15,7 @@ class AntiDiodePair : public NonLinearComponent
 {
 public:
     AntiDiodePair();
+    void paint(juce::Graphics& g) override;
     int connect(CircuitComponent* c) override ;
     ComponentType getComponentType() override;
 };

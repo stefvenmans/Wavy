@@ -15,6 +15,7 @@ class Diode : public NonLinearComponent
 {
 public:
     Diode();
+    void paint(juce::Graphics& g) override;
     int connect(CircuitComponent* c) override ;
     ComponentType getComponentType() override;
 };

@@ -815,6 +815,10 @@ void MainComponent::writeAudio(){
     wdfEnvironment.adaptTree();
     if(audioOutStream != nullptr)audioOutStream->writeText(juce::String("output_val")+"\n", false, false,lineEnd);
     
+    double WDFout[buffer_in.getNumSamples()];
+    double timeSec;{
+    juce::ScopedTimeMeasurement m(timeSec);
+    
     for(auto i=0; i<buffer_in.getNumSamples(); i++){
         
 //        if(i==0) input = 44100;
@@ -825,9 +829,17 @@ void MainComponent::writeAudio(){
         }
         wdfEnvironment.cycleWave();
         if(outputIndex != -1 && outputIndex < leafComponents.size()){
-            double outSample = (-leafComponents[outputIndex]->getWDFComponent()->upPort->getPortVoltage());
-            sample = juce::String(outSample);
+            WDFout[i] = (-leafComponents[outputIndex]->getWDFComponent()->upPort->getPortVoltage());
+            
         }
+        
+    }
+        
+    }
+    
+    std::cout << "WDF computation took " << timeSec << " seconds" << std::endl;
+    for(auto i=0; i<buffer_in.getNumSamples(); i++){
+        sample = juce::String(WDFout[i]);
         if(audioOutStream != nullptr)audioOutStream->writeText(sample+"\n", false, false,lineEnd);
     }
 }

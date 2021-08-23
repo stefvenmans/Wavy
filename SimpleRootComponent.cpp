@@ -19,31 +19,67 @@ SimpleRootComponent::SimpleRootComponent(juce::String svgFileName) : CircuitComp
 void SimpleRootComponent::paint(juce::Graphics& g) 
 {
     paintSVG(g);
-//        if(isAdapted){
-//            wBLine = juce::Line<float>(80,20, 90+ 10.0f, 20);
-//        }
-//        else{
-//            wBLine = juce::Line<float>(90,20, 90+ 10.0f, 20);
-//        }
-    wBLine = juce::Line<float>(90,20, 90+ 10.0f, 20);
+    g.setColour(juce::Colours::black);
+    g.drawRect(10,10,componentWidth-20,componentHeight-20,3);
     
-    auto wALine = juce::Line<float>(100,80, 90, 80);
-    auto wBAdapted = juce::Line<float>(80,15,80,25);
-    
-    wBLine.applyTransform(getTransform().rotated(angle, getWidth()/2, getHeight()/2));
-    wALine.applyTransform(getTransform().rotated(angle, getWidth()/2, getHeight()/2));
-    wBAdapted.applyTransform(getTransform().rotated(angle, getWidth()/2, getHeight()/2));
-    
-    g.drawArrow(wBLine, 1.5, 10,4);
-    g.drawArrow(wALine, 1.5, 10,4);
-    //g.drawLine(wBAdapted,1.5);
-    
-    for(auto c : isConnected){
-        if(c){
-            //g.setColour(juce::Colours::red);
-            //g.drawRect(0,0,100,100,5);
+    auto index = 0;
+    for(auto p: portOrientations){
+        juce::Line<float> wA;
+        juce::Line<float> wB;
+        switch(p){
+            case 0:
+                if(isConnected[index]){
+                    wB = juce::Line<float>(20, 10, 20, 0);
+                    g.drawLine(wB,1.5);
+                }
+                else{
+                    wB = juce::Line<float>(20, 10, 20, 0);
+                    g.drawArrow(wB,1.5,10,4);
+                }
+                wA = juce::Line<float>(100-20, 0, 100-20, 10);
+                break;
+            case 1:
+                if(isConnected[index]){
+                    wB = juce::Line<float>(100-10, 20, 100, 20);
+                    g.drawLine(wB,1.5);
+                }
+                else{
+                    wB = juce::Line<float>(100-10, 20, 100, 20);
+                    g.drawArrow(wB,1.5,10,4);
+                }
+                wA = juce::Line<float>(100, 100-20, 100-10, 100-20);
+                
+                break;
+            case 2:
+                if(isConnected[index]){
+                    wB = juce::Line<float>(100-20, 100-10, 100-20, 100);
+                    g.drawLine(wB,1.5);
+                }
+                else{
+                    wB = juce::Line<float>(100-20, 100-10, 100-20, 100);
+                    g.drawArrow(wB,1.5,10,4);
+                }
+                wA = juce::Line<float>(20,100, 20, 100-10);
+                
+                break;
+            case 3:
+                if(isConnected[index]){
+                    wB = juce::Line<float>(10, 100-20, 0, 100-20);
+                    g.drawLine(wB,1.5);
+                }
+                else{
+                    wB = juce::Line<float>(10, 100-20, 0, 100-20);
+                    g.drawArrow(wB,1.5,10,4);
+                }
+                wA = juce::Line<float>(0, 20, 10, 20);
+                
+                break;
         }
+        g.drawArrow(wA,1.5,10,4);
+        
+        index++;
     }
+    
     
     //std::cout << "port orientation" << portOrientations[0] << std::endl;
 }

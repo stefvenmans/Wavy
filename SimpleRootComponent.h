@@ -26,6 +26,4 @@ protected:
     AdaptedLeafComponent* child;
     std::unique_ptr<wdfRootNode> root;
     
-private:
-    juce::Line<float> wBLine;
 };

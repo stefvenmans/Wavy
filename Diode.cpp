@@ -16,6 +16,68 @@ Diode::Diode() : NonLinearComponent("diode.svg")
     isConnected.push_back(false);
 }
 
+void Diode::paint(juce::Graphics& g){
+    NonLinearComponent::paint(g);
+    
+    auto index = 0;
+    for(auto p: portOrientations){
+        juce::Line<float> wA;
+        juce::Line<float> wB;
+        switch(p){
+            case 0:
+                if(isConnected[index]){
+                    wB = juce::Line<float>(20, 10, 20, 0);
+                    g.drawLine(wB,1.5);
+                }
+                else{
+                    wB = juce::Line<float>(20, 10, 20, 0);
+                    g.drawArrow(wB,1.5,10,4);
+                }
+                wA = juce::Line<float>(100-20, 0, 100-20, 10);
+                break;
+            case 1:
+                if(isConnected[index]){
+                    wB = juce::Line<float>(100-10, 20, 100, 20);
+                    g.drawLine(wB,1.5);
+                }
+                else{
+                    wB = juce::Line<float>(100-10, 20, 100, 20);
+                    g.drawArrow(wB,1.5,10,4);
+                }
+                wA = juce::Line<float>(100, 100-20, 100-10, 100-20);
+                
+                break;
+            case 2:
+                if(isConnected[index]){
+                    wB = juce::Line<float>(100-20, 100-10, 100-20, 100);
+                    g.drawLine(wB,1.5);
+                }
+                else{
+                    wB = juce::Line<float>(100-20, 100-10, 100-20, 100);
+                    g.drawArrow(wB,1.5,10,4);
+                }
+                wA = juce::Line<float>(20,100, 20, 100-10);
+                
+                break;
+            case 3:
+                if(isConnected[index]){
+                    wB = juce::Line<float>(10, 100-20, 0, 100-20);
+                    g.drawLine(wB,1.5);
+                }
+                else{
+                    wB = juce::Line<float>(10, 100-20, 0, 100-20);
+                    g.drawArrow(wB,1.5,10,4);
+                }
+                wA = juce::Line<float>(0, 20, 10, 20);
+                
+                break;
+        }
+        g.drawArrow(wA,1.5,10,4);
+        
+        index++;
+    }
+}
+
 int Diode::connect(CircuitComponent* c) {
     //Check if at right side
     auto index = 0;

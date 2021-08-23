@@ -114,6 +114,65 @@ void RNodeNonLinRootComponent::paint (juce::Graphics& g)
     
     g.setColour(juce::Colours::black);
     g.drawRect(10,10,collums*100-20,rows*100-20,2);
+    
+    auto index = 0;
+    for(auto p: portOrientations){
+        juce::Line<float> wA;
+        juce::Line<float> wB;
+        switch(p){
+            case 0:
+                if(isConnected[index]){
+                    wB = juce::Line<float>(20, 10, 20, 0);
+                    g.drawLine(wB,1.5);
+                }
+                else{
+                    wB = juce::Line<float>(20, 10, 20, 0);
+                    g.drawArrow(wB,1.5,10,4);
+                }
+                wA = juce::Line<float>(100-20, 0, 100-20, 10);
+                break;
+            case 1:
+                if(isConnected[index]){
+                    wB = juce::Line<float>(100-10, 20, 100, 20);
+                    g.drawLine(wB,1.5);
+                }
+                else{
+                    wB = juce::Line<float>(100-10, 20, 100, 20);
+                    g.drawArrow(wB,1.5,10,4);
+                }
+                wA = juce::Line<float>(100, 100-20, 100-10, 100-20);
+                
+                break;
+            case 2:
+                if(isConnected[index]){
+                    wB = juce::Line<float>(100-20, 100-10, 100-20, 100);
+                    g.drawLine(wB,1.5);
+                }
+                else{
+                    wB = juce::Line<float>(100-20, 100-10, 100-20, 100);
+                    g.drawArrow(wB,1.5,10,4);
+                }
+                wA = juce::Line<float>(20,100, 20, 100-10);
+                
+                break;
+            case 3:
+                if(isConnected[index]){
+                    wB = juce::Line<float>(10, 100-20, 0, 100-20);
+                    g.drawLine(wB,1.5);
+                }
+                else{
+                    wB = juce::Line<float>(10, 100-20, 0, 100-20);
+                    g.drawArrow(wB,1.5,10,4);
+                }
+                wA = juce::Line<float>(0, 20, 10, 20);
+                
+                break;
+        }
+        g.drawArrow(wA,1.5,10,4);
+        
+        index++;
+    }
+    
 }
 
 int RNodeNonLinRootComponent::getIndexOfPortOrientation(int o){
@@ -141,6 +200,7 @@ int RNodeNonLinRootComponent::connect(CircuitComponent* c) {
                                 std::cout << "circuit will be able to connect to this side : " << o << "with index : " << i << std::endl;
                                 connectSuccesfull = true;
                                 roots[i] = (NonLinearComponent*)c;
+                                isConnected[index] = true;
                                 return 1;
                             }
                             
@@ -156,7 +216,7 @@ int RNodeNonLinRootComponent::connect(CircuitComponent* c) {
                             std::cout << "circuit will be able to connect to this side : " << o << "with index : " << i << std::endl;
                             connectSuccesfull = true;
                             childs[i+getIndexOfPortOrientation(1)-collums] = (AdaptedLeafComponent*)c;
-                            
+                            isConnected[index] = true;
                             return 1;
                         }
                     }
@@ -168,7 +228,7 @@ int RNodeNonLinRootComponent::connect(CircuitComponent* c) {
                             std::cout << "circuit will be able to connect to this side : " << o << "with index : " << i + 2 << std::endl;
                             connectSuccesfull = true;
                             childs[getIndexOfPortOrientation(2) +(collums-i-1)-collums] = (AdaptedLeafComponent*)c;
-                            
+                            isConnected[index] = true;
                             return 1;
                         }
                     }
@@ -180,7 +240,7 @@ int RNodeNonLinRootComponent::connect(CircuitComponent* c) {
                             std::cout << "circuit will be able to connect to this side : " << o << "with index : " << i + 4 << std::endl;
                             connectSuccesfull = true;
                             childs[getIndexOfPortOrientation(3) +(rows-i-1)-collums] = (AdaptedLeafComponent*)c;
-                            
+                            isConnected[index] = true;
                             return 1;
                         }
                     }
