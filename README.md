@@ -11,7 +11,9 @@ Wavy was built using the open source application programming interface <a href="
   </ol> 
   
   <h3>Demo</h3>
+  <body>
   <iframe width="420" height="315"
   src="https://www.youtube.com/watch?v=t__uv63Sa9w">
   </iframe>
+  </body>
   
