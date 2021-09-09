@@ -9,3 +9,9 @@ Wavy was built using the open source application programming interface <a href="
   <li>Add the <a href="https://github.com/RT-WDF/rt-wdf_lib">RT-WDF</a> library to the project folder. Make sure to install all libraries that it depends on. These are specified in the <a href="https://github.com/RT-WDF/rt-wdf_lib">RT-WDF</a> repository. </li>
   <li>You should now be able to build an executable and run it.</li>
   </ol> 
+  
+  <h3>Demo</h3>
+  <iframe width="420" height="315"
+  src="https://www.youtube.com/watch?v=t__uv63Sa9w">
+  </iframe>
+  
