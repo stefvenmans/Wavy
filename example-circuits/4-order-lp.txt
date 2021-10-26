@@ -1,0 +1,16 @@
+<L_VOL>name=V1,x=200,y=300,ang=0,vs=1,rs=1591.5</L_VOL>
+<A_SER>name=S1,x=300,y=300,ang=0</A_SER>
+<A_PAR>name=P1,x=400,y=300,ang=4.71239</A_PAR>
+<L_CAP>name=C1,x=400,y=200,ang=1.5708,cap=1e-06</L_CAP>
+<A_SER>name=S1,x=400,y=400,ang=0</A_SER>
+<L_RES>name=R1,x=300,y=400,ang=0,res=1591.5</L_RES>
+<L_CAP>name=C1,x=500,y=300,ang=1.5708,cap=1e-06</L_CAP>
+<A_SER>name=S1,x=500,y=500,ang=0</A_SER>
+<A_PAR>name=P1,x=500,y=400,ang=4.71239</A_PAR>
+<L_RES>name=R1,x=400,y=500,ang=0,res=1591.5</L_RES>
+<L_CAP>name=C1,x=600,y=400,ang=1.5708,cap=1e-06</L_CAP>
+<A_PAR>name=P1,x=600,y=500,ang=4.71239</A_PAR>
+<A_SER>name=S1,x=600,y=600,ang=0</A_SER>
+<L_CAP>name=C1,x=700,y=600,ang=3.14159,cap=1e-06</L_CAP>
+<L_RES>name=R1,x=500,y=600,ang=0,res=1591.5</L_RES>
+<SR_SHC>name=Shrt1,x=300,y=200,ang=1.5708</SR_SHC>

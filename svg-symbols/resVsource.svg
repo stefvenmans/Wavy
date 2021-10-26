@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="23.529pt" height="23.529pt" viewBox="0 0 23.529 23.529">
+<g enable-background="new">
+<path transform="matrix(1,0,0,-1,40.682,98.518)" stroke-width=".3985" stroke-linecap="butt" stroke-miterlimit="10" stroke-linejoin="miter" fill="none" stroke="#000000" d="M -40.4834 75.18878 L -40.4834 98.31952 L -17.35266 98.31952 L -17.35266 75.18878 Z M -17.35266 98.31952 "/>
+<path transform="matrix(1,0,0,-1,40.682,98.518)" stroke-width=".3985" stroke-linecap="butt" stroke-miterlimit="10" stroke-linejoin="miter" fill="none" stroke="#000000" d="M -33.97908 93.98366 L -33.98396 93.79398 M -33.98396 93.99722 L -33.98885 91.65979 M -33.98885 81.89859 L -33.98396 79.53613 M -33.98396 79.73938 L -33.98396 79.53613 M -33.98396 79.53613 L -33.78564 79.54744 M -33.98886 79.5476 L -27.84427 79.55336 M -27.84427 79.55336 L -21.69167 79.53613 M -21.89488 79.53632 L -21.69167 79.53613 "/>
+<path transform="matrix(1,0,0,-1,40.682,98.518)" stroke-width=".797" stroke-linecap="butt" stroke-miterlimit="10" stroke-linejoin="miter" fill="none" stroke="#000000" d="M -29.09987 86.75414 C -29.09987 89.44887 -31.28433 91.63333 -33.97906 91.63333 C -36.6738 91.63333 -38.85826 89.44887 -38.85826 86.75414 C -38.85826 84.0594 -36.6738 81.87494 -33.97906 81.87494 C -31.28433 81.87494 -29.09987 84.0594 -29.09987 86.75414 Z M -33.97906 86.75414 "/>
+<text xml:space="preserve" transform="matrix(1 0 -0 1 .0000009536743 23.529)" font-size="4.9813" font-family="CMSY5" font-style="italic"><tspan y="-9.179" x="4.005">&#x2212;</tspan></text>
+<text xml:space="preserve" transform="matrix(1 0 -0 1 .0000009536743 23.529)" font-size="4.9813" font-family="CMR5"><tspan y="-11.859" x="4.144">+</tspan></text>
+<path transform="matrix(1,0,0,-1,40.682,98.518)" stroke-width=".3985" stroke-linecap="butt" stroke-miterlimit="10" stroke-linejoin="miter" fill="none" stroke="#000000" d="M -33.97908 93.98366 L -33.78073 93.99722 M -33.98396 93.99722 L -32.37857 94.0108 M -23.30507 94.0108 L -21.69167 93.99722 M -21.8949 93.99722 L -21.69167 93.99722 "/>
+<path transform="matrix(1,0,0,-1,40.682,98.518)" stroke-width=".797" stroke-linecap="butt" stroke-linejoin="bevel" fill="none" stroke="#000000" d="M -32.76773 93.98366 L -31.58012 95.68445 L -30.00192 92.28285 L -28.4237 95.68445 L -26.8455 92.28285 L -25.26729 95.68445 L -23.68909 92.28285 L -22.89998 93.98366 "/>
+</g>
+</svg>

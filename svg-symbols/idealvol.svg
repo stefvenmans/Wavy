@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="23.529pt" height="23.529pt" viewBox="0 0 23.529 23.529">
+<g enable-background="new">
+<path transform="matrix(1,0,0,-1,-103.906,127.435)" stroke-width=".3985" stroke-linecap="butt" stroke-miterlimit="10" stroke-linejoin="miter" fill="none" stroke="#000000" d="M 104.10684 104.10684 L 104.10684 127.2376 L 127.2376 127.2376 L 127.2376 104.10684 Z M 127.2376 127.2376 "/>
+<path transform="matrix(1,0,0,-1,-103.906,127.435)" stroke-width=".3985" stroke-linecap="butt" stroke-miterlimit="10" stroke-linejoin="miter" fill="none" stroke="#000000" d="M 115.67221 122.9017 L 115.68892 122.71623 M 115.68892 122.91946 L 115.70561 120.59686 M 115.70561 110.81436 L 115.68892 108.45837 M 115.68892 108.6616 L 115.68892 108.45837 "/>
+<path transform="matrix(1,0,0,-1,-103.906,127.435)" stroke-width=".797" stroke-linecap="butt" stroke-miterlimit="10" stroke-linejoin="miter" fill="none" stroke="#000000" d="M 120.56203 115.6722 C 120.56203 118.37282 118.37282 120.56203 115.6722 120.56203 C 112.97157 120.56203 110.78236 118.37282 110.78236 115.6722 C 110.78236 112.97157 112.97157 110.78236 115.6722 110.78236 C 118.37282 110.78236 120.56203 112.97157 120.56203 115.6722 Z M 115.6722 115.6722 "/>
+<text xml:space="preserve" transform="matrix(1 0 -0 1 .0000019073487 23.528996)" font-size="4.9813" font-family="CMSY5" font-style="italic"><tspan y="-9.172" x="9.066">&#x2212;</tspan></text>
+<text xml:space="preserve" transform="matrix(1 0 -0 1 .0000019073487 23.528996)" font-size="4.9813" font-family="CMR5"><tspan y="-11.866" x="9.205">+</tspan></text>
+</g>
+</svg>

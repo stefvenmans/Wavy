@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="23.529pt" height="23.529pt" viewBox="0 0 23.529 23.529">
+<g enable-background="new">
+<path transform="matrix(1,0,0,-1,-103.906,127.435)" stroke-width=".3985" stroke-linecap="butt" stroke-miterlimit="10" stroke-linejoin="miter" fill="none" stroke="#000000" d="M 104.10684 104.10684 L 104.10684 127.2376 L 127.2376 127.2376 L 127.2376 104.10684 Z M 127.2376 127.2376 "/>
+<path transform="matrix(1,0,0,-1,-103.906,127.435)" stroke-width=".3985" stroke-linecap="butt" stroke-miterlimit="10" stroke-linejoin="miter" fill="none" stroke="#000000" d="M 122.9017 122.9017 L 122.71623 122.91946 M 122.91946 122.91946 L 120.12064 122.93721 M 113.31537 122.93721 L 110.48285 122.91946 M 110.68608 122.91946 L 110.48285 122.91946 L 110.4986 122.734 M 110.49881 122.93723 L 110.51166 120.16968 M 110.50189 111.25934 L 110.48285 108.45837 M 110.48306 108.66159 L 110.48285 108.45837 M 110.48285 108.45837 L 110.70203 108.47379 M 110.49881 108.47403 L 116.72598 108.48186 M 116.72598 108.48186 L 122.91946 108.45837 M 122.71625 108.45862 L 122.91946 108.45837 "/>
+<path transform="matrix(1,0,0,-1,-103.906,127.435)" stroke-width=".797" stroke-linecap="butt" stroke-linejoin="bevel" fill="none" stroke="#000000" d="M 120.48444 122.90169 L 119.4858 121.62607 L 118.2855 124.17732 L 117.08522 121.62607 L 115.88493 124.17732 L 114.68465 121.62607 L 113.48436 124.17732 L 112.88422 122.90169 "/>
+<path transform="matrix(1,0,0,-1,-103.906,127.435)" stroke-width=".797" stroke-linecap="butt" stroke-miterlimit="10" stroke-linejoin="miter" fill="none" stroke="#000000" d="M 114.92874 115.67621 C 114.93143 118.13606 112.93958 120.1323 110.47974 120.13498 C 108.01988 120.13766 106.02365 118.14581 106.02097 115.68597 C 106.01826 113.22612 108.01013 111.22989 110.46997 111.2272 C 112.92982 111.2245 114.92606 113.21635 114.92874 115.67621 Z M 110.47485 115.68109 "/>
+<text xml:space="preserve" transform="matrix(.99998 .0011 -.0011 .99998 -.010356188 23.524559)" font-size="4.9813" font-family="CMSY5" font-style="italic"><tspan y="-9.489" x="3.867">&#x2212;</tspan></text>
+<text xml:space="preserve" transform="matrix(.99998 .0011 -.0011 .99998 -.012646198 23.52436)" font-size="4.9813" font-family="CMR5"><tspan y="-11.573" x="4.007">+</tspan></text>
+</g>
+</svg>

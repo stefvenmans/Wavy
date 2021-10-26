@@ -1,0 +1,7 @@
+<L_VOL>name=V1,x=500,y=300,ang=0,vs=1,rs=1e-09</L_VOL>
+<L_RES>name=R2,x=500,y=200,ang=0,res=820000</L_RES>
+<L_CAP>name=C1,x=600,y=100,ang=1.5708,cap=5.6e-08</L_CAP>
+<L_RES>name=R1,x=600,y=400,ang=4.71239,res=400</L_RES>
+<L_CAP>name=C2,x=700,y=100,ang=1.5708,cap=5.6e-08</L_CAP>
+<L_RES>name=RL,x=700,y=400,ang=4.71239,res=1e+06</L_RES>
+<R_RNODE>name=,x=600,y=200,ang=0,collums=2,rows=2,wires={{[11,32],[32,32],[32,11]},{[77,11],[77,189]},{[122,11],[122,32],[77,32]},{[168,11],[168,189]},{[11,77],[168,77]},{[11,168],[122,168],[122,189]},{[32,189],[32,168]}},portConnectionPoints={[32,11],[77,11],[122,11],[168,11],[168,189],[122,189],[77,189],[32,189],[11,168],[11,122],[11,77],[11,32]},interConnectionPoints={[77,32],[168,77],[32,168]},resistorStampIndex={5,1,6,2,7,3,8,3,9,4,10,0},voltageSourceStampIndex={0,5,1,6,2,7,1,8,3,9,2,10},portOrientations={0,0,2,2,3,3},wireNodeIndexes={0,1,1,2,2,3,3,4},nullorStampIndexes={0,4,2,3},numberOfNodes={5}</R_RNODE>
