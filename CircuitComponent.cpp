@@ -80,6 +80,7 @@ void CircuitComponent::mouseDown(const juce::MouseEvent& e)
     //Rotate
     if(e.mods.isCommandDown() && e.mods.isShiftDown()){
         rotateComponent();
+        rotate = true;
     }
     
     //Open property panel
@@ -130,7 +131,7 @@ void CircuitComponent::mouseUp(const juce::MouseEvent& e)
             
         }
     }
-    if(x == getX() && y == getY()) {
+    if(x == getX() && y == getY() && rotate != true) {
         if(componentIsSelected!=true){
             componentIsSelected = true;
             repaint();
@@ -148,11 +149,11 @@ void CircuitComponent::mouseUp(const juce::MouseEvent& e)
             //isConnected = true;
         }
     }
-
+    rotate = false;
 }
 
 void CircuitComponent::mouseDoubleClick(const juce::MouseEvent &e){
-    if(propertyPanelCallback != nullptr){
+    if(propertyPanelCallback != nullptr && rotate!=true){
         propertyPanelCallback(this);
     }
 }

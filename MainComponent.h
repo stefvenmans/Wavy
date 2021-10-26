@@ -123,6 +123,10 @@ private:
     juce::TextButton calculateMatButton;
     juce::TextButton calculateRaw;
     juce::TextButton runSimulationButton;
+    juce::Label setSampleRateInfoLabel;
+    juce::Label setSampleFrequencyLabel;
+    
+    
     bool runSimulation = false;
     
     juce::Viewport viewPort;

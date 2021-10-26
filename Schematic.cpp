@@ -18,9 +18,9 @@ Schematic::Schematic(){
 }
 
 void Schematic::paint (juce::Graphics& g){
-//    g.setColour(juce::Colours::grey);
-//    g.fillAll(juce::Colours::lightgrey);
-    g.fillAll(juce::Colours::white);
+    g.setColour(juce::Colours::grey);
+    g.fillAll(juce::Colours::lightgrey);
+    //g.fillAll(juce::Colours::white);
     g.drawRect(juce::Rectangle<float>(5000/2-300,5000/2,50,50),15);
     
     

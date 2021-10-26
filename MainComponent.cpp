@@ -67,7 +67,7 @@ MainComponent::MainComponent()
     std::vector<double> impulse;
     for(int i=0; i<inputSignalDuration*44100; i++){
         if(i==0){
-            impulse.push_back(44100);
+            impulse.push_back(1);
         }
         else{
             impulse.push_back(0);
@@ -89,6 +89,17 @@ MainComponent::MainComponent()
     calculateMatButton.onClick = [this](){
         
     };
+    
+    addAndMakeVisible(setSampleFrequencyLabel);
+    setSampleFrequencyLabel.setText("44100", juce::NotificationType::dontSendNotification);
+    setSampleFrequencyLabel.setEditable(true);
+    setSampleFrequencyLabel.onTextChange = [this]() {
+        wdfEnvironment.setSamplerate(setSampleFrequencyLabel.getTextValue().toString().getDoubleValue());
+    };
+    
+    addAndMakeVisible(setSampleRateInfoLabel);
+    setSampleRateInfoLabel.setText("Sample Rate (Hz):", juce::NotificationType::dontSendNotification);
+    setSampleRateInfoLabel.setEditable(false);
     
     addAndMakeVisible(textButton);
     textButton.onClick = [this](){
@@ -147,24 +158,26 @@ MainComponent::MainComponent()
     
 //    addAndMakeVisible(sidePanel);
 //    sidePanel.setBounds(300,300,200,300);
-    
+    componentSelector.addItem("-",11);
     componentSelector.addItem("Resistor", 1);
     componentSelector.addItem("Capacitor",2);
+    componentSelector.addItem("Inductor", 17);
     componentSelector.addItem("Inverter", 3);
     componentSelector.addItem("Y-Parameter Amplifier",4);
     componentSelector.addItem("Series", 5);
     componentSelector.addItem("Parallel",6);
-    componentSelector.addItem("IdealVolSource",7);
-    componentSelector.addItem("R Node",8);
     componentSelector.addItem("Resistive Voltage Source",9);
+    componentSelector.addItem("Ideal Voltage Source",7);
     componentSelector.addItem("Short Circuit",10);
-    componentSelector.addItem("-",11);
-    componentSelector.addItem("Old R Node", 12);
+    componentSelector.addItem("R-Node Linear",8);
+    componentSelector.addItem("R-Node Non-Linear", 15);
     componentSelector.addItem("Diode", 13);
     componentSelector.addItem("Transistor",14);
-    componentSelector.addItem("R Node Non Lin", 15);
     componentSelector.addItem("Anti Diode Pair", 16);
-    componentSelector.addItem("Inductor", 17);
+    
+    //componentSelector.addItem("Old R Node", 12);
+    
+    
     addAndMakeVisible(componentSelector);
     
     
@@ -182,7 +195,7 @@ MainComponent::MainComponent()
             case 1:
                 schematic.addAndMakeVisible(leafComponents.add(new Resistor()));
                 leafComponents.getLast()->setName("R1");
-                leafComponents.getLast()->setBounds(20,20,100,100);
+                leafComponents.getLast()->setBounds(50,50,100,100);
                 leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
                 leafComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
                 leafComponents.getLast()->componentIsSelectedCallBack = componentIsSelectedCallBack;
@@ -191,7 +204,7 @@ MainComponent::MainComponent()
             case 2:
                 schematic.addAndMakeVisible(leafComponents.add(new Capacitor()));
                 leafComponents.getLast()->setName("C1");
-                leafComponents.getLast()->setBounds(20,20,100,100);
+                leafComponents.getLast()->setBounds(50,50,100,100);
                 leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
                 leafComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
                 leafComponents.getLast()->componentIsSelectedCallBack = componentIsSelectedCallBack;
@@ -200,7 +213,7 @@ MainComponent::MainComponent()
             case 3:
                 schematic.addAndMakeVisible(leafComponents.add(new Inverter()));
                 leafComponents.getLast()->setName("I1");
-                leafComponents.getLast()->setBounds(20,20,100,100);
+                leafComponents.getLast()->setBounds(50,50,100,100);
                 leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
                 leafComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
                 leafComponents.getLast()->componentIsSelectedCallBack = componentIsSelectedCallBack;
@@ -209,7 +222,7 @@ MainComponent::MainComponent()
             case 4:
                 schematic.addAndMakeVisible(leafComponents.add(new YParameterAmp()));
                 leafComponents.getLast()->setName("y-1");
-                leafComponents.getLast()->setBounds(20,20,200,100);
+                leafComponents.getLast()->setBounds(50,50,200,100);
                 leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
                 leafComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
                 leafComponents.getLast()->componentIsSelectedCallBack = componentIsSelectedCallBack;
@@ -218,7 +231,7 @@ MainComponent::MainComponent()
             case 5:
                 schematic.addAndMakeVisible(leafComponents.add(new Series()));
                 leafComponents.getLast()->setName("S1");
-                leafComponents.getLast()->setBounds(20,20,100,100);
+                leafComponents.getLast()->setBounds(50,50,100,100);
                 leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
                 leafComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
                 leafComponents.getLast()->componentIsSelectedCallBack = componentIsSelectedCallBack;
@@ -227,7 +240,7 @@ MainComponent::MainComponent()
             case 6:
                 schematic.addAndMakeVisible(leafComponents.add(new Parallel()));
                 leafComponents.getLast()->setName("P1");
-                leafComponents.getLast()->setBounds(20,20,100,100);
+                leafComponents.getLast()->setBounds(50,50,100,100);
                 leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
                 leafComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
                 leafComponents.getLast()->componentIsSelectedCallBack = componentIsSelectedCallBack;
@@ -236,7 +249,7 @@ MainComponent::MainComponent()
                 simpleRoot = std::make_unique<IdealVoltageSource>();
                 simpleRoot->setName("V1");
                 schematic.addAndMakeVisible(simpleRoot.get());
-                simpleRoot->setBounds(20,20,100,100);
+                simpleRoot->setBounds(50,50,100,100);
                 simpleRoot->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
                 simpleRoot->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
                 simpleRoot->componentIsSelectedCallBack = componentIsSelectedCallBack;
@@ -252,7 +265,7 @@ MainComponent::MainComponent()
             case 9:
                 schematic.addAndMakeVisible(leafComponents.add(new VoltageSource()));
                 leafComponents.getLast()->setName("V1");
-                leafComponents.getLast()->setBounds(20,20,100,100);
+                leafComponents.getLast()->setBounds(50,50,100,100);
                 leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
                 leafComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
                 leafComponents.getLast()->componentIsSelectedCallBack = componentIsSelectedCallBack;
@@ -261,7 +274,7 @@ MainComponent::MainComponent()
                 simpleRoot = std::make_unique<ShortCircuit>();
                 simpleRoot->setName("Shrt1");
                 schematic.addAndMakeVisible(simpleRoot.get());
-                simpleRoot->setBounds(20,20,100,100);
+                simpleRoot->setBounds(50,50,100,100);
                 simpleRoot->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
                 simpleRoot->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
                 simpleRoot->componentIsSelectedCallBack = componentIsSelectedCallBack;
@@ -271,14 +284,14 @@ MainComponent::MainComponent()
             case 13:
                 schematic.addAndMakeVisible(nonLinearComponents.add(new Diode()));
                 nonLinearComponents.getLast()->setName("D1");
-                nonLinearComponents.getLast()->setBounds(20,20,100,100);
+                nonLinearComponents.getLast()->setBounds(50,50,100,100);
                 nonLinearComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
                 nonLinearComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
                 break;
             case 14:
                 schematic.addAndMakeVisible(nonLinearComponents.add(new Transistor()));
                 nonLinearComponents.getLast()->setName("Q1");
-                nonLinearComponents.getLast()->setBounds(20,20,200,100);
+                nonLinearComponents.getLast()->setBounds(50,50,200,100);
                 nonLinearComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
                 nonLinearComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
                 break;
@@ -293,7 +306,7 @@ MainComponent::MainComponent()
             case 16:
                 schematic.addAndMakeVisible(nonLinearComponents.add(new AntiDiodePair()));
                 nonLinearComponents.getLast()->setName("D1");
-                nonLinearComponents.getLast()->setBounds(20,20,100,100);
+                nonLinearComponents.getLast()->setBounds(50,50,100,100);
                 nonLinearComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
                 nonLinearComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
                 break;
@@ -301,12 +314,13 @@ MainComponent::MainComponent()
             case 17:
                 schematic.addAndMakeVisible(leafComponents.add(new Inductor()));
                 leafComponents.getLast()->setName("L1");
-                leafComponents.getLast()->setBounds(20,20,100,100);
+                leafComponents.getLast()->setBounds(50,50,100,100);
                 leafComponents.getLast()->addHandler(std::bind(&MainComponent::wantsToConnect_,this,std::placeholders::_1));
                 leafComponents.getLast()->setPropertyPanelCallback(std::bind(&MainComponent::openPropertyPanelForComponent,this,std::placeholders::_1));
                 leafComponents.getLast()->componentIsSelectedCallBack = componentIsSelectedCallBack;
                 break;
         }
+        componentSelector.setSelectedId(11);
     };
     
     
@@ -696,6 +710,8 @@ void MainComponent::resized()
     //calculateMatButton.setBounds(getWidth()-350,40*2+80+60,50,50);
     calculateRaw.setBounds(0, getHeight()-30, 100, 30);
     runSimulationButton.setBounds(getWidth()-350, getHeight()-30, 50, 30);
+    setSampleFrequencyLabel.setBounds(100+100, getHeight()-30, 100, 30);
+    setSampleRateInfoLabel.setBounds(100+5, getHeight()-30, 100, 30);
     
 //    for (auto x = 0; x < numX; ++x)
 //        {
@@ -804,7 +820,8 @@ void MainComponent::writeAudio(){
     
     //write CSV file
     
-    outputCSV = appDataPath.getChildFile("output.csv");
+    //outputCSV = appDataPath.getChildFile("output.csv");
+    outputCSV = appDataPath.getChildFile(frontPanel.getOutputFileName());
     outputCSV.deleteFile();
     auto audioOutStream = outputCSV.createOutputStream();
     char lineEnd [] = {'\n',0};
@@ -816,10 +833,10 @@ void MainComponent::writeAudio(){
     if(audioOutStream != nullptr)audioOutStream->writeText(juce::String("output_val")+"\n", false, false,lineEnd);
     
     double WDFout[buffer_in.getNumSamples()];
-    double timeSec;{
-    juce::ScopedTimeMeasurement m(timeSec);
+    double timeSec=0;{
+    //juce::ScopedTimeMeasurement m(timeSec);
     
-    for(auto i=0; i<buffer_in.getNumSamples(); i++){
+    for(int i=0; i<buffer_in.getNumSamples(); i++){
         
 //        if(i==0) input = 44100;
 //        else input = 0;

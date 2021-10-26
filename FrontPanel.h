@@ -26,6 +26,7 @@ public:
     std::function<void(int)> setSignalType;
     std::function<void()> setSignalAmp;
     std::function<void(double)> setSignalFreq;
+    juce::String getOutputFileName();
     
 private:
     juce::OwnedArray<juce::Component> components;
@@ -44,4 +45,8 @@ private:
     juce::Label inputFrequencyText;
     juce::Label inputAmplitude;
     juce::Label inputAmplitudeText;
+    juce::Label outputText;
+    juce::Label outputFileName;
+    
+    juce::TextButton buttonToremove;
 };

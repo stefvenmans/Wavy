@@ -12,7 +12,7 @@
 
 
 WdfEnvironment::WdfEnvironment(){
-    setSamplerate(44100);
+    setSamplerate(44100*2);
     subtreeCount = 1;
     subtreeEntryNodes = new wdfTreeNode*[subtreeCount];
 }
@@ -77,3 +77,6 @@ void WdfEnvironment::setSMat(mat newSMat){
     Smat = newSMat;
 }
 
+void WdfEnvironment::setSampleRateWDF(double newSampleRate){
+    setSamplerate(newSampleRate);
+}

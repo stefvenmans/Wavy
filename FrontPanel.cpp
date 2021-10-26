@@ -56,6 +56,17 @@ FrontPanel::FrontPanel(){
     };
     juce::Label inputFrequencyText;
     
+    addAndMakeVisible(outputText);
+    outputText.setText("Output Settings", juce::NotificationType::dontSendNotification);
+    outputText.setEditable(false);
+    
+    addAndMakeVisible(outputFileName);
+    outputFileName.setText("output.csv", juce::NotificationType::dontSendNotification);
+    outputFileName.setEditable(true);
+    
+    
+    
+    
 }
 void FrontPanel::paint (juce::Graphics& g){
     g.setColour(juce::Colours::grey);
@@ -92,6 +103,11 @@ void FrontPanel::paint (juce::Graphics& g){
     g.setColour(juce::Colours::yellow);
     g.strokePath (signalOut, juce::PathStrokeType(lineThickness));
     
+    g.setColour(juce::Colour(46, 53, 59));
+    g.fillRoundedRectangle(getWidth()-500, 45+20+5, 100, 20, 3);
+    g.setColour(juce::Colour(143,151,154));
+    g.drawRoundedRectangle(getWidth()-500, 45+20+5, 100, 20, 3, 1);
+    
 }
 void FrontPanel::addNewComponent(juce::Component* c){
     int x = 0;
@@ -123,6 +139,8 @@ void FrontPanel::resized(){
     inputText.setBounds(getWidth()-500, 0, 100, 15);
     inputSignalComboBox.setBounds(getWidth()-500, 20, 100, 20);
     inputFrequency.setBounds(getWidth()-500, 45, 100, 15);
+    outputText.setBounds(getWidth()-500, 45+5, 100, 15);
+    outputFileName.setBounds(getWidth()-500, 45+20+5, 100, 20);
 }
 
 void FrontPanel::removeComponent(juce::Component* c){
@@ -146,3 +164,6 @@ void FrontPanel::addSignalToPlot(std::vector<double> signalIn, std::vector<doubl
     repaint();
 }
     
+juce::String FrontPanel::getOutputFileName(){
+    return outputFileName.getText();
+}

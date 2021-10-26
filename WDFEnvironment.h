@@ -34,6 +34,8 @@ public:
     void setSMat(mat newSMat);
     
     std::function<mat(matData* rootMatrixData, double*)> getRNodeMatLambda;
+    
+    void setSampleRateWDF(double newSampleRate);
 private:
     mat Smat;
 };

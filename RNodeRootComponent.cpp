@@ -12,8 +12,8 @@
 
 RNodeRootComponent::RNodeRootComponent() : CircuitComponent(""){
     
-    collums = 1;
-    rows = 1;
+    collums = 2;
+    rows = 2;
     setSize(collums*componentWidth,rows*componentHeight);
     
     //North
@@ -306,6 +306,75 @@ void RNodeRootComponent::paint (juce::Graphics& g)
     
     g.setColour(juce::Colours::black);
     g.drawRect(10,10,collums*100-20,rows*100-20,2);
+    
+    
+    if(nodeDrawView != true){
+        auto index = 0;
+        int lastPortOrientation = -1;
+        int sameSideCounter = 0;
+        for(auto p: portOrientations){
+            juce::Line<float> wA;
+            juce::Line<float> wB;
+            
+            if(lastPortOrientation == p) sameSideCounter++;
+            else sameSideCounter = 0;
+            
+            switch(p){
+                case 0:
+                    
+                    if(isConnected[index]){
+                        wB = juce::Line<float>(20+sameSideCounter*componentWidth, 10, 20+sameSideCounter*componentWidth, 0);
+                        g.drawLine(wB,1.5);
+                    }
+                    else{
+                        wB = juce::Line<float>(20+sameSideCounter*componentWidth, 10, 20+sameSideCounter*componentWidth, 0);
+                        g.drawArrow(wB,1.5,10,4);
+                    }
+                    wA = juce::Line<float>(100-20+sameSideCounter*componentWidth, 0, 100-20+sameSideCounter*componentWidth, 10);
+                    break;
+                case 1:
+                    if(isConnected[index]){
+                        wB = juce::Line<float>(componentWidth*collums-10, 20+sameSideCounter*componentHeight, componentWidth*collums, 20+sameSideCounter*componentHeight);
+                        g.drawLine(wB,1.5);
+                    }
+                    else{
+                        wB = juce::Line<float>(componentWidth*collums-10, 20+sameSideCounter*componentHeight, componentWidth*collums, 20+sameSideCounter*componentHeight);
+                        g.drawArrow(wB,1.5,10,4);
+                    }
+                    wA = juce::Line<float>(componentWidth*collums, 100-20+sameSideCounter*componentHeight, componentWidth*collums-10, 100-20+sameSideCounter*componentHeight);
+                    
+                    break;
+                case 2:
+                    if(isConnected[index]){
+                        wB = juce::Line<float>(100-20+sameSideCounter*componentWidth, componentHeight*rows-10, 100-20+sameSideCounter*componentWidth, componentHeight*rows);
+                        g.drawLine(wB,1.5);
+                    }
+                    else{
+                        wB = juce::Line<float>(100-20+sameSideCounter*componentWidth, componentHeight*rows-10, 100-20+sameSideCounter*componentWidth, componentHeight*rows);
+                        g.drawArrow(wB,1.5,10,4);
+                    }
+                    wA = juce::Line<float>(20+sameSideCounter*componentWidth,componentHeight*rows, 20+sameSideCounter*componentWidth, componentHeight*rows-10);
+                    
+                    break;
+                case 3:
+                    if(isConnected[index]){
+                        wB = juce::Line<float>(10, 100-20+sameSideCounter*componentHeight, 0, 100-20+sameSideCounter*componentHeight);
+                        g.drawLine(wB,1.5);
+                    }
+                    else{
+                        wB = juce::Line<float>(10, 100-20+sameSideCounter*componentHeight, 0, 100-20+sameSideCounter*componentHeight);
+                        g.drawArrow(wB,1.5,10,4);
+                    }
+                    wA = juce::Line<float>(0, 20+sameSideCounter*componentHeight, 10, 20+sameSideCounter*componentHeight);
+                    
+                    break;
+            }
+            g.drawArrow(wA,1.5,10,4);
+            lastPortOrientation = p;
+            index++;
+        }
+    }
+    
 }
 
 int RNodeRootComponent::getIndexOfPortOrientation(int o){
@@ -331,7 +400,7 @@ int RNodeRootComponent::connect(CircuitComponent* c) {
                         std::cout << "circuit will be able to connect to this side : " << o << "with index : " << i << std::endl;
                         connectSuccesfull = true;
                         childs[i] = (AdaptedLeafComponent*)c;
-        
+                        isConnected[index+i] = true;
                         return 1;
                     }
                 }
@@ -343,7 +412,7 @@ int RNodeRootComponent::connect(CircuitComponent* c) {
                         std::cout << "circuit will be able to connect to this side : " << o << "with index : " << i << std::endl;
                         connectSuccesfull = true;
                         childs[i+getIndexOfPortOrientation(1)] = (AdaptedLeafComponent*)c;
-                        
+                        isConnected[index+i] = true;
                         return 1;
                     }
                 }
@@ -355,7 +424,7 @@ int RNodeRootComponent::connect(CircuitComponent* c) {
                         std::cout << "circuit will be able to connect to this side : " << o << "with index : " << i + 2 << std::endl;
                         connectSuccesfull = true;
                         childs[getIndexOfPortOrientation(2) +(collums-i-1)] = (AdaptedLeafComponent*)c;
-                        
+                        isConnected[index+i] = true;
                         return 1;
                     }
                 }
@@ -367,7 +436,7 @@ int RNodeRootComponent::connect(CircuitComponent* c) {
                         std::cout << "circuit will be able to connect to this side : " << o << "with index : " << i + 4 << std::endl;
                         connectSuccesfull = true;
                         childs[getIndexOfPortOrientation(3) +(rows-i-1)] = (AdaptedLeafComponent*)c;
-                        
+                        isConnected[index+i] = true;
                         return 1;
                     }
                 }
